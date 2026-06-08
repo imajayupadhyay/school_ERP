@@ -1,0 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;0,800;0,900;1,500;1,600&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,500&display=swap');
+@import 'tailwindcss';
+
+/* ---- SchoolLID design tokens (brand guideline) ---- */
+@theme {
+  --color-ink: #0f3a31; /* dark green  — sidebar, headers, primary surfaces */
+  --color-ink-soft: #254f45; /* deep green */
+  --color-paper: #f7f4ec; /* warm cream — app background */
+  --color-paper-2: #ece4d3;
+  --color-accent: #56aa3a; /* brand green — primary actions, highlights */
+  --color-accent-2: #74c34a; /* light green — hover / lighter accent */
+  --color-lime: #d7d400; /* lime accent — emphasis, selected states, status */
+  --color-line: rgba(15, 58, 49, 0.14);
+
+  --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Playfair Display', ui-serif, Georgia, serif;
+
+  --radius-pill: 9999px;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--color-ink);
+  color: var(--color-paper);
+}

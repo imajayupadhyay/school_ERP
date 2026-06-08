@@ -1,0 +1,195 @@
+/* ============================================================================
+   Marketing homepage — bespoke effects layer (1:1 port of school/index.html).
+   Tailwind handles layout/colour/typography in the components; this file holds
+   the keyframes + effects that are awkward to express as utilities.
+   Tokens (--color-ink / --color-paper / --color-accent ...) come from index.css.
+   ============================================================================ */
+
+:root {
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ---------- grain overlay ---------- */
+.mk-grain {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+}
+
+/* ---------- hero glows ---------- */
+.mk-hero-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  pointer-events: none;
+  z-index: 0;
+}
+.mk-hero-glow.a {
+  width: 520px;
+  height: 520px;
+  background: radial-gradient(circle, rgba(86, 170, 58, 0.4), transparent 70%);
+  top: -160px;
+  right: -60px;
+}
+.mk-hero-glow.b {
+  width: 420px;
+  height: 420px;
+  background: radial-gradient(circle, rgba(116, 195, 74, 0.22), transparent 70%);
+  bottom: -140px;
+  left: 4%;
+}
+
+/* ---------- reveal helpers ---------- */
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 1s var(--ease), transform 1s var(--ease);
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------- keyframes ---------- */
+@keyframes mk-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(0.55); opacity: 0.4; }
+}
+@keyframes mk-blink {
+  50% { opacity: 0; }
+}
+@keyframes mk-drop {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(250%); }
+}
+@keyframes mk-scroll {
+  to { transform: translateX(-50%); }
+}
+@keyframes mk-bob {
+  50% { transform: translateY(-4px); }
+}
+@keyframes mk-spin {
+  to { transform: rotate(360deg); }
+}
+
+.mk-live {
+  animation: mk-pulse 2s infinite;
+}
+
+/* ---------- typewriter caret ---------- */
+.mk-caret {
+  display: inline-block;
+  width: 0.055em;
+  height: 0.82em;
+  background: var(--color-lime);
+  margin-left: 0.04em;
+  vertical-align: -0.06em;
+  animation: mk-blink 1s steps(1) infinite;
+}
+
+/* ---------- scroll cue ---------- */
+.mk-scroll-ln {
+  width: 1px;
+  height: 42px;
+  background: var(--color-paper);
+  position: relative;
+  overflow: hidden;
+}
+.mk-scroll-ln::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 40%;
+  background: var(--color-lime);
+  animation: mk-drop 1.8s var(--ease) infinite;
+}
+
+/* ---------- marquee ---------- */
+.mk-marquee-track {
+  display: inline-flex;
+  gap: 48px;
+  animation: mk-scroll 26s linear infinite;
+  will-change: transform;
+}
+.mk-marquee:hover .mk-marquee-track {
+  animation-play-state: paused;
+}
+
+/* ---------- features carousel ---------- */
+.mk-car-track {
+  display: flex;
+  gap: 26px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 24px;
+  scrollbar-width: none;
+  cursor: grab;
+}
+.mk-car-track::-webkit-scrollbar { display: none; }
+.mk-car-track.drag {
+  cursor: grabbing;
+  scroll-snap-type: none;
+}
+.mk-feat-card .mk-ring {
+  position: absolute;
+  right: -60px;
+  top: -60px;
+  width: 180px;
+  height: 180px;
+  border: 1px solid var(--color-accent);
+  opacity: 0.35;
+  border-radius: 50%;
+  transition: transform 0.8s var(--ease);
+}
+.mk-feat-card:hover .mk-ring {
+  transform: scale(1.4) rotate(40deg);
+}
+
+/* ---------- hero scene float chips ---------- */
+.mk-bob-1 { animation: mk-bob 10s ease-in-out infinite; }
+.mk-bob-2 { animation: mk-bob 11s ease-in-out infinite 1s; }
+
+/* ---------- marquee items + outlined text ---------- */
+.mk-out {
+  -webkit-text-stroke: 1.4px var(--color-lime);
+  color: transparent;
+}
+.mk-marquee-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 48px;
+  font-size: clamp(1.4rem, 3vw, 2.4rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.mk-marquee-item::after {
+  content: "✦";
+  font-size: 1.1rem;
+  color: var(--color-lime);
+  opacity: 0.9;
+}
+
+/* ---------- outlined display words (why / stats) ---------- */
+.mk-stroke-paper {
+  -webkit-text-stroke: 1.4px var(--color-paper);
+  color: transparent;
+}
+
+/* ---------- registration modal ---------- */
+.mk-modal-overlay {
+  opacity: 0;
+  transition: opacity 0.35s var(--ease);
+}
+.mk-modal.open .mk-modal-overlay { opacity: 1; }
+.mk-modal-card {
+  transform: translateY(26px) scale(0.98);
+  opacity: 0;
+  transition: transform 0.42s var(--ease), opacity 0.42s var(--ease);
+}
+.mk-modal.open .mk-modal-card { transform: none; opacity: 1; }

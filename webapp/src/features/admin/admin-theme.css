@@ -1,0 +1,22 @@
+/* ============================================================================
+   School Admin panel — scoped "Editorial / Prestige" colour scheme.
+   Overrides the global SchoolLID brand tokens ONLY inside `.admin-theme`, so
+   the dashboard uses navy + saffron + gold while the marketing site and login
+   keep the green palette. Tailwind v4 utilities read these as CSS variables,
+   so the override cascades to every bg-/text-/border- utility in the subtree.
+   ============================================================================ */
+.admin-theme {
+  --color-ink: #131c3d;       /* navy ink — text, dark tiles, avatars */
+  --color-ink-soft: #24315c;
+  --color-paper: #fbf6ec;     /* warm paper — page background */
+  --color-paper-2: #f3e9d6;   /* deeper paper — subtle surfaces */
+  --color-accent: #ee6a2c;    /* saffron — primary actions, active nav */
+  --color-accent-2: #f2854e;  /* saffron light — hover */
+  --color-lime: #d6991f;      /* gold — prestige / emphasis */
+  --color-line: rgba(19, 28, 61, 0.12);
+}
+
+/* Prestige navy gradient for the sidebar (matches the reference admin). */
+.admin-theme .admin-sidebar {
+  background: linear-gradient(180deg, #0a1024 0%, #131c3d 60%, #1b2748 100%);
+}
