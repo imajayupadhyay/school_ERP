@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\Employees\EmployeeController;
 use App\Http\Controllers\Api\V1\SchoolProfileController;
+use App\Http\Controllers\Api\V1\Students\StudentController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -60,5 +61,16 @@ Route::prefix('v1')->group(function () {
         Route::put('/employees/{employee}', [EmployeeController::class, 'update']);
         Route::delete('/employees/{employee}', [EmployeeController::class, 'destroy']);
         Route::put('/employees/{employee}/assignments', [EmployeeController::class, 'syncAssignments']);
+
+        Route::get('/students/export', [StudentController::class, 'export']);
+        Route::post('/students/promote', [StudentController::class, 'promote']);
+        Route::get('/students', [StudentController::class, 'index']);
+        Route::post('/students', [StudentController::class, 'store']);
+        Route::get('/students/{student}', [StudentController::class, 'show']);
+        Route::put('/students/{student}', [StudentController::class, 'update']);
+        Route::delete('/students/{student}', [StudentController::class, 'destroy']);
+        Route::post('/students/{student}/transfer', [StudentController::class, 'transfer']);
+        Route::post('/students/{student}/photo', [StudentController::class, 'uploadPhoto']);
+        Route::get('/students/{student}/history', [StudentController::class, 'history']);
     });
 });

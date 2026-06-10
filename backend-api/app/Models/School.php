@@ -58,4 +58,10 @@ class School extends Model
     {
         return $this->hasMany(Student::class);
     }
+
+    /** @return HasMany<Guardian, $this> */
+    public function guardians(): HasMany
+    {
+        return $this->hasMany(Guardian::class);
+    }
 }

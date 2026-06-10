@@ -5,6 +5,8 @@ const STATUS_STYLES: Record<string, string> = {
   on_leave: 'bg-lime/15 text-[#b45309]',
   suspended: 'bg-[#dc2626]/10 text-[#dc2626]',
   terminated: 'bg-[#dc2626]/10 text-[#dc2626]',
+  transferred: 'bg-[#2c49a6]/10 text-[#2c49a6]',
+  alumni: 'bg-[#168a66]/10 text-[#168a66]',
 }
 
 export default function StatusBadge({ status }: { status: string }) {

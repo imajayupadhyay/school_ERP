@@ -2,9 +2,13 @@
 
 namespace Database\Seeders;
 
+use App\Models\AcademicSession;
 use App\Models\Employee;
 use App\Models\School;
+use App\Models\SchoolClass;
+use App\Models\Section;
 use App\Models\Student;
+use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
@@ -101,15 +105,74 @@ class DemoSchoolSeeder extends Seeder
             );
         }
 
+        // --- Academic setup used by student management ---
+        $currentSession = AcademicSession::updateOrCreate(
+            ['school_id' => $school->id, 'name' => '2026-27'],
+            [
+                'start_date' => '2026-04-01',
+                'end_date' => '2027-03-31',
+                'is_current' => true,
+                'status' => 'active',
+            ],
+        );
+
+        $classModels = [];
+        $sectionModels = [];
+        $classes = ['Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6', 'Grade 7', 'Grade 8'];
+        $sections = ['A', 'B'];
+
+        foreach ($classes as $classIndex => $className) {
+            $classModels[$className] = SchoolClass::updateOrCreate(
+                ['school_id' => $school->id, 'name' => $className],
+                ['sequence' => $classIndex + 1, 'status' => 'active'],
+            );
+
+            foreach ($sections as $section) {
+                $sectionModels[$className][$section] = Section::updateOrCreate(
+                    ['class_id' => $classModels[$className]->id, 'name' => $section],
+                    ['school_id' => $school->id, 'capacity' => 40, 'status' => 'active'],
+                );
+            }
+        }
+
+        foreach (['English', 'Mathematics', 'Science', 'Social Studies', 'Hindi'] as $subjectName) {
+            $subject = Subject::updateOrCreate(
+                ['school_id' => $school->id, 'name' => $subjectName],
+                ['code' => strtoupper(substr($subjectName, 0, 4)), 'type' => 'theory', 'status' => 'active'],
+            );
+
+            $subject->classes()->syncWithoutDetaching(
+                collect($classModels)->mapWithKeys(fn (SchoolClass $class) => [
+                    $class->id => ['school_id' => $school->id],
+                ])->all(),
+            );
+        }
+
         // --- Students (idempotent: only seed when this school has none) ---
         if (Student::where('school_id', $school->id)->exists()) {
+            Student::where('school_id', $school->id)
+                ->whereNull('class_id')
+                ->get()
+                ->each(function (Student $student) use ($currentSession, $classModels, $sectionModels) {
+                    $class = $student->class_name ? ($classModels[$student->class_name] ?? null) : null;
+                    $section = $student->class_name && $student->section
+                        ? ($sectionModels[$student->class_name][$student->section] ?? null)
+                        : null;
+
+                    if ($class !== null) {
+                        $student->update([
+                            'academic_session_id' => $currentSession->id,
+                            'class_id' => $class->id,
+                            'section_id' => $section?->id,
+                        ]);
+                    }
+                });
+
             return;
         }
 
         $firstNames = ['Aarav', 'Vivaan', 'Aditya', 'Diya', 'Saanvi', 'Ananya', 'Ishaan', 'Kabir', 'Myra', 'Aanya', 'Reyansh', 'Kiara', 'Advik', 'Riya', 'Ayaan', 'Pari', 'Vihaan', 'Anvi', 'Arnav', 'Navya'];
         $lastNames = ['Sharma', 'Verma', 'Patel', 'Gupta', 'Singh', 'Nair', 'Reddy', 'Iyer', 'Mehta', 'Rao'];
-        $classes = ['Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6', 'Grade 7', 'Grade 8'];
-        $sections = ['A', 'B'];
 
         $admissionSeq = 1;
         foreach ($classes as $classIndex => $className) {
@@ -120,14 +183,19 @@ class DemoSchoolSeeder extends Seeder
 
                     Student::create([
                         'school_id' => $school->id,
+                        'academic_session_id' => $currentSession->id,
                         'admission_no' => 'ADM'.str_pad((string) $admissionSeq, 4, '0', STR_PAD_LEFT),
                         'first_name' => $firstNames[array_rand($firstNames)],
                         'last_name' => $lastNames[array_rand($lastNames)],
                         'gender' => $gender,
                         'date_of_birth' => Carbon::now()->subYears(5 + $classIndex)->subDays(random_int(0, 364))->toDateString(),
+                        'class_id' => $classModels[$className]->id,
+                        'section_id' => $sectionModels[$className][$section]->id,
                         'class_name' => $className,
                         'section' => $section,
                         'roll_no' => (string) $roll,
+                        'house' => ['Tagore', 'Gandhi', 'Nehru', 'Raman'][array_rand(['Tagore', 'Gandhi', 'Nehru', 'Raman'])],
+                        'category' => 'General',
                         'guardian_name' => $firstNames[array_rand($firstNames)].' '.$lastNames[array_rand($lastNames)],
                         'guardian_phone' => '+91 9'.str_pad((string) random_int(100000000, 999999999), 9, '0', STR_PAD_LEFT),
                         'status' => 'active',

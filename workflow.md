@@ -61,11 +61,20 @@ Completed:
   - Web: `/admin/employees` — Teachers & Staff sidebar item enabled; list includes search, type/status filters, pagination, login/status badges, add/edit employee modal, login toggle, delete confirmation, and assignment modal.
   - Backend feature tests in `tests/Feature/Employees/EmployeeTest.php` (8 tests covering create with login, tenant-scoped pagination/search, duplicate validation, role checks, update/login disable, assignment sync/validation, soft delete/login deactivation). Full suite: 40/40 passing.
   - Verified with `npm run build` in `webapp/` (179 modules, no TS errors).
+- Student Management module (Phase 3, item 6):
+  - Existing `students` table expanded for proper school admin operations: academic session, normalized class/section references, admission type, roll, house, category, profile/contact/address, emergency contact, medical notes, previous school details, photo path, transfer date/reason, and richer statuses.
+  - New `guardians` table and `guardian_student` pivot create the foundation for parent/guardian linking and the upcoming Parent/Guardian module.
+  - API: paginated/searchable/filterable `GET /api/v1/students`, CSV `GET /students/export`, `POST /students`, `GET /students/{id}`, `PUT /students/{id}`, archive via `DELETE /students/{id}`, `POST /students/{id}/transfer`, `POST /students/{id}/photo`, `GET /students/{id}/history`, and bulk class promotion via `POST /students/promote`.
+  - Validation enforces same-school academic session/class/section references, section-belongs-to-class checks, unique admission numbers per school, unique roll numbers per class/section/session, and a single primary guardian.
+  - Web: `/admin/students` — Students sidebar item enabled; roster includes search, session/class/section/status/gender filters, pagination, CSV export, profile/history modal, add/edit modal, archive, transfer, photo upload, and promote workflow.
+  - `DemoSchoolSeeder` now creates demo academic sessions/classes/sections/subjects and backfills demo students to normalized class/section IDs so admin filters work with demo data.
+  - Backend feature tests in `tests/Feature/Students/StudentManagementTest.php` (8 tests covering create with guardian, tenant-scoped filtering, duplicate validation, role checks, archive/transfer, promote, photo, history, export). Full suite: 48/48 passing.
+  - Verified with `npm run build` in `webapp/` (181 modules, no TS errors; Vite reports a chunk-size warning after larger admin screens).
 
 Not Started:
 
 - Full RBAC (permission tables / action-level permissions) — currently a single `role` string per user.
-- School Admin CRUD modules still remaining: Students, Parents/Guardians, Attendance, Fees, Exams/Results, Homework/Study Material, Notices/Communication, Reports.
+- School Admin CRUD modules still remaining: Parents/Guardians, Attendance, Fees, Exams/Results, Homework/Study Material, Notices/Communication, Reports.
 - Platform Super Admin web panel.
 - Student, Parent, and Teacher/Employee portals.
 - Audit log viewing/reporting and broader file upload workflows.
