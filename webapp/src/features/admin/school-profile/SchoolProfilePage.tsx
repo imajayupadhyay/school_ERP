@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
-import axios from 'axios'
 import { useAuth } from '@/features/auth/AuthContext'
+import { extractErrorMessage } from '@/lib/errors'
 import { fetchSchoolProfile, updateSchoolProfile, uploadSchoolLogo } from './api'
 import type { SchoolProfile, UpdateSchoolProfilePayload } from './types'
-import FormField, { inputClass } from './components/FormField'
-import SectionCard from './components/SectionCard'
+import FormField, { inputClass } from '../components/FormField'
+import SectionCard from '../components/SectionCard'
 import LogoUploader from './components/LogoUploader'
 
 const EDITOR_ROLES = ['school_admin', 'principal', 'super_admin']
@@ -349,14 +349,6 @@ export default function SchoolProfilePage() {
 function toFormValues(profile: SchoolProfile): UpdateSchoolProfilePayload {
   const { id: _id, code: _code, status: _status, logo_path: _logoPath, logo_url: _logoUrl, ...rest } = profile
   return rest
-}
-
-function extractErrorMessage(err: unknown): string {
-  if (axios.isAxiosError(err)) {
-    const data = err.response?.data as { message?: string } | undefined
-    return data?.message ?? 'Something went wrong. Please try again.'
-  }
-  return 'Something went wrong. Please try again.'
 }
 
 function SchoolProfileSkeleton() {

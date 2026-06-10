@@ -6,7 +6,7 @@ This file is the project memory for the SchoolLID ERP build. Every AI agent and 
 
 ## Current Project State
 
-Status as of: 2026-06-08
+Status as of: 2026-06-10
 
 Completed:
 
@@ -44,6 +44,14 @@ Completed:
   - Backend feature tests in `tests/Feature/SchoolProfileTest.php` (8 tests, all passing).
   - Fixed `.env` `APP_URL` to `http://127.0.0.1:8000` so generated `logo_url` resolves correctly against the dev server.
 - Tenancy hardening: `App\Models\Concerns\BelongsToSchool` global scope trait applied to `Student` (mandatory for all future tenant models — see `PROJECT_RULES.md`). Tested in `tests/Feature/TenantScopeTest.php` (4 tests, all passing).
+- Academic Session, Class, Section, and Subject setup (Phase 3, item 3):
+  - New tables: `academic_sessions` (name, start/end date, `is_current`, status), `classes` (name, sequence, status), `sections` (per-class, name, capacity, status), `subjects` (name, code, type theory/practical, status), `class_subject` pivot for class-subject mapping. All use `BelongsToSchool`.
+  - Models: `AcademicSession`, `SchoolClass` (table `classes`, has many `sections`, belongs to many `subjects`), `Section` (belongs to `SchoolClass`), `Subject` (belongs to many `SchoolClass` via `class_subject`).
+  - API: `GET/POST/PUT/DELETE /api/v1/academic-sessions` + `POST /academic-sessions/{id}/set-current` (transactional, only one session can be current; current session cannot be deleted); `GET/POST/PUT/DELETE /api/v1/classes`; `GET/POST/PUT/DELETE /api/v1/sections` (`?class_id=` filter); `GET/POST/PUT/DELETE /api/v1/subjects` + `PUT /subjects/{id}/classes` (sync class assignments). Writes restricted to `school_admin`/`principal`/`super_admin`, audit-logged.
+  - Web: `/admin/academic-setup` — tabbed page (Academic Sessions | Classes & Sections | Subjects) with full CRUD modals, "set as current" session action, nested section management under classes, and class-assignment modal for subjects. Sidebar "Classes" item now links here. Read-only banner for non-admin roles.
+  - Shared frontend components promoted to `features/admin/components/`: `FormField`, `SectionCard`, new `Modal`, `StatusBadge`; `extractErrorMessage` moved to `src/lib/errors.ts`.
+  - Backend feature tests in `tests/Feature/Academic/` (18 tests: sessions, classes, sections, subjects incl. set-current, delete-current guard, class-subject sync, role checks, uniqueness validation). Full suite: 32/32 passing.
+  - Verified via curl smoke test against the demo school (sessions create/update/set-current, sections, subjects, class-subject sync) and `npm run build` (177 modules, no TS errors).
 
 Not Started:
 
