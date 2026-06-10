@@ -32,7 +32,7 @@ const primaryNav: NavItem[] = [
   { label: 'Notices', icon: NoticesIcon },
 ]
 
-const secondaryNav: NavItem[] = [{ label: 'Settings', icon: SettingsIcon }]
+const secondaryNav: NavItem[] = [{ label: 'Settings', icon: SettingsIcon, to: '/admin/settings' }]
 
 interface SidebarProps {
   open: boolean

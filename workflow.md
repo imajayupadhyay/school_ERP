@@ -36,6 +36,14 @@ Completed:
   - `AdminLayout` (brand-dark sidebar + sticky topbar with user menu/sign-out), responsive.
   - `DashboardPage` with React Query: stat cards, Students-by-Class bar chart, gender donut, recent-admissions table, skeleton/error states. Solid-fill icon set.
   - NOTE: PHP CLI must be Homebrew's 8.5 (`/opt/homebrew/bin/php`); XAMPP's 8.2 fails the vendor platform check. MySQL runs via XAMPP (MariaDB).
+- School Profile & Configuration module (Phase 3, item 2):
+  - `schools` table extended: contact (alternate phone, website), full address (line2, state, postal code, country), localization (timezone, date format, currency), academic year start month, identifiers (board affiliation, registration number, UDISE code, principal name, established year).
+  - New `audit_logs` table + `AuditLog` model + `App\Support\AuditLogger` service — reusable foundation for audit logging across future modules.
+  - API: `GET/PUT /api/v1/school-profile`, `POST /api/v1/school-profile/logo` (logo upload to `storage/app/public/schools/{id}`, served via `php artisan storage:link`). Edit/logo-upload restricted to `school_admin`/`principal`/`super_admin`; updates write an audit log entry.
+  - Web: `/admin/settings` — sectioned form (General Info, Address, Localization & Academic Year, Identifiers, Branding/logo upload), read-only for non-admin roles. Sidebar "Settings" item enabled.
+  - Backend feature tests in `tests/Feature/SchoolProfileTest.php` (8 tests, all passing).
+  - Fixed `.env` `APP_URL` to `http://127.0.0.1:8000` so generated `logo_url` resolves correctly against the dev server.
+- Tenancy hardening: `App\Models\Concerns\BelongsToSchool` global scope trait applied to `Student` (mandatory for all future tenant models — see `PROJECT_RULES.md`). Tested in `tests/Feature/TenantScopeTest.php` (4 tests, all passing).
 
 Not Started:
 
@@ -88,15 +96,26 @@ Mobile Apps:
 
 SchoolLID is a multi-tenant SaaS school ERP.
 
-Recommended initial tenancy model:
+Confirmed tenancy model (single shared database, not per-school databases):
 
-- One central MySQL database.
+- One central MySQL database for all schools.
 - Tenant-scoped records use `school_id`.
 - Platform Super Admin can manage all schools.
 - School Admin and employees can only access records belonging to their school.
 - Parent and Student accounts can only access linked student data.
 
 Do not let React or React Native connect directly to MySQL. Only Laravel talks to the database.
+
+**Why single database (not per-school databases):** instant onboarding (one row insert vs. provisioning a new database + running all migrations), schema changes apply once instead of fanning out across N databases, and platform-wide reporting/dashboards stay simple. The tradeoff (risk of cross-tenant data leaks from a missed `school_id` filter) is mitigated by the mandatory global tenant scope below.
+
+**Tenant isolation enforcement — `BelongsToSchool` trait:**
+
+- `app/Models/Concerns/BelongsToSchool.php` — every school-owned model (`Student` and all future tenant models) must use this trait.
+- Adds a global Eloquent scope that auto-filters all queries by the authenticated user's `school_id`, and auto-stamps `school_id` on `create()`.
+- Platform Super Admin (`school_id = null`) is unaffected by the scope.
+- `Model::forSchool($id)` and `Model::allSchools()` provide explicit overrides for services/seeders/Super Admin use.
+- Covered by `tests/Feature/TenantScopeTest.php`.
+- Full rule documented in `PROJECT_RULES.md` under "Mandatory Global Tenant Scope" — read it before adding any new tenant-scoped model.
 
 ## Source Requirement Documents
 

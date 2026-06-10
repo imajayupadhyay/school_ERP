@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\DashboardController;
+use App\Http\Controllers\Api\V1\SchoolProfileController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -21,5 +22,9 @@ Route::prefix('v1')->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout']);
 
         Route::get('/dashboard', [DashboardController::class, 'index']);
+
+        Route::get('/school-profile', [SchoolProfileController::class, 'show']);
+        Route::put('/school-profile', [SchoolProfileController::class, 'update']);
+        Route::post('/school-profile/logo', [SchoolProfileController::class, 'uploadLogo']);
     });
 });

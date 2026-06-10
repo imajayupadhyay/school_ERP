@@ -2,14 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Builder;
+use App\Models\Concerns\BelongsToSchool;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Student extends Model
 {
-    use HasFactory;
+    use BelongsToSchool, HasFactory;
 
     protected $fillable = [
         'school_id',
@@ -39,12 +39,6 @@ class Student extends Model
     public function school(): BelongsTo
     {
         return $this->belongsTo(School::class);
-    }
-
-    /** Tenant scope — always filter students by the resolved school. */
-    public function scopeForSchool(Builder $query, int $schoolId): Builder
-    {
-        return $query->where('school_id', $schoolId);
     }
 
     public function getFullNameAttribute(): string

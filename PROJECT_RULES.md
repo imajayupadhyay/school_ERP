@@ -54,6 +54,7 @@ Do not mix frontend code inside `backend-api/` unless it is Laravel-required bui
 
 SchoolLID is a SaaS platform. Tenant safety is mandatory.
 
+- One central MySQL database is used for all schools (single-database multi-tenancy). Do not create per-school databases — it does not scale for onboarding, schema migrations, or platform-wide reporting.
 - School-level records must be scoped by `school_id`.
 - Platform Super Admin can access platform-wide data.
 - School users can only access their own school data.
@@ -62,6 +63,19 @@ SchoolLID is a SaaS platform. Tenant safety is mandatory.
 - Every query for school-owned data must enforce tenant scope.
 - Imports, exports, reports, dashboards, and search must also enforce tenant scope.
 - Never trust a `school_id` from the frontend without server-side authorization.
+
+### Mandatory Global Tenant Scope
+
+Every Eloquent model that stores school-owned data (students, teachers, classes, attendance, fees, exams, etc.) MUST use the `App\Models\Concerns\BelongsToSchool` trait (`backend-api/app/Models/Concerns/BelongsToSchool.php`).
+
+This trait:
+
+- Adds a global query scope that automatically filters every query by the authenticated user's `school_id`. A developer/agent forgetting `where('school_id', ...)` can no longer leak data across schools.
+- Auto-fills `school_id` on `create()` from the authenticated user, so it never needs to be passed from the frontend.
+- Does not restrict Platform Super Admin (`school_id` is null on their user record) — platform-wide queries work without extra scopes.
+- Provides `Model::forSchool($schoolId)` to explicitly query a specific school (bypasses the global scope; use in services/seeders/Super Admin contexts), and `Model::allSchools()` to explicitly query across all schools (Super Admin only).
+
+Do not write manual `school_id` filters on new tenant models — use this trait instead. See `app/Models/Student.php` for the reference implementation.
 
 ## Auth And Permission Rules
 

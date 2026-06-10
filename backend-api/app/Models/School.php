@@ -15,11 +15,37 @@ class School extends Model
         'code',
         'email',
         'phone',
+        'alternate_phone',
+        'website',
         'address',
+        'address_line2',
         'city',
+        'state',
+        'postal_code',
+        'country',
+        'timezone',
+        'date_format',
+        'currency',
+        'academic_year_start_month',
+        'board_affiliation',
+        'registration_number',
+        'udise_code',
+        'principal_name',
+        'established_year',
         'logo_path',
         'status',
     ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'academic_year_start_month' => 'integer',
+            'established_year' => 'integer',
+        ];
+    }
 
     /** @return HasMany<User, $this> */
     public function users(): HasMany

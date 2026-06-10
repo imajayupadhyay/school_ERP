@@ -4,6 +4,7 @@ import LoginPage from '@/features/auth/LoginPage'
 import ProtectedRoute from '@/features/auth/ProtectedRoute'
 import AdminLayout from '@/features/admin/AdminLayout'
 import DashboardPage from '@/features/admin/dashboard/DashboardPage'
+import SchoolProfilePage from '@/features/admin/school-profile/SchoolProfilePage'
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<DashboardPage />} />
+          <Route path="settings" element={<SchoolProfilePage />} />
         </Route>
       </Route>
 

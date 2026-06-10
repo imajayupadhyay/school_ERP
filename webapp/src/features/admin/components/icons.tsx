@@ -39,6 +39,12 @@ export const ClassesIcon = (p: IconProps) => (
   </svg>
 )
 
+export const UploadIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M5 20h14v-2H5v2Zm7-16-5.5 5.5 1.41 1.41L11 7.83V16h2V7.83l3.09 3.08L17.5 9.5 12 4Z" />
+  </svg>
+)
+
 export const AttendanceIcon = (p: IconProps) => (
   <svg {...base(p)}>
     <path d="M19 3h-1V1h-2v2H8V1H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Zm0 16H5V9h14v10Zm-8.3-1.3 5.7-5.7-1.4-1.4-4.3 4.29-1.7-1.7-1.4 1.41 3.1 3.1Z" />
