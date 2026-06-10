@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\Academic\SectionController;
 use App\Http\Controllers\Api\V1\Academic\SubjectController;
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\DashboardController;
+use App\Http\Controllers\Api\V1\Employees\EmployeeController;
 use App\Http\Controllers\Api\V1\SchoolProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -52,5 +53,12 @@ Route::prefix('v1')->group(function () {
         Route::put('/subjects/{subject}', [SubjectController::class, 'update']);
         Route::delete('/subjects/{subject}', [SubjectController::class, 'destroy']);
         Route::put('/subjects/{subject}/classes', [SubjectController::class, 'syncClasses']);
+
+        Route::get('/employees', [EmployeeController::class, 'index']);
+        Route::post('/employees', [EmployeeController::class, 'store']);
+        Route::get('/employees/{employee}', [EmployeeController::class, 'show']);
+        Route::put('/employees/{employee}', [EmployeeController::class, 'update']);
+        Route::delete('/employees/{employee}', [EmployeeController::class, 'destroy']);
+        Route::put('/employees/{employee}/assignments', [EmployeeController::class, 'syncAssignments']);
     });
 });

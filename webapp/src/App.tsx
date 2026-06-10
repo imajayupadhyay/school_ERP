@@ -6,6 +6,7 @@ import AdminLayout from '@/features/admin/AdminLayout'
 import DashboardPage from '@/features/admin/dashboard/DashboardPage'
 import SchoolProfilePage from '@/features/admin/school-profile/SchoolProfilePage'
 import AcademicSetupPage from '@/features/admin/academic-setup/AcademicSetupPage'
+import EmployeePage from '@/features/admin/employees/EmployeePage'
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
           <Route index element={<DashboardPage />} />
           <Route path="settings" element={<SchoolProfilePage />} />
           <Route path="academic-setup" element={<AcademicSetupPage />} />
+          <Route path="employees" element={<EmployeePage />} />
         </Route>
       </Route>
 

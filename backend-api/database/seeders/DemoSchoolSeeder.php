@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Employee;
 use App\Models\School;
 use App\Models\Student;
 use App\Models\User;
@@ -32,7 +33,7 @@ class DemoSchoolSeeder extends Seeder
         );
 
         // --- School admin ---
-        User::updateOrCreate(
+        $admin = User::updateOrCreate(
             ['school_id' => $school->id, 'email' => 'demo@gmail.com'],
             [
                 'name' => 'Demo Admin',
@@ -43,6 +44,23 @@ class DemoSchoolSeeder extends Seeder
             ],
         );
 
+        Employee::updateOrCreate(
+            ['school_id' => $school->id, 'employee_code' => 'EMP000'],
+            [
+                'user_id' => $admin->id,
+                'first_name' => 'Demo',
+                'last_name' => 'Admin',
+                'employee_type' => 'non_teaching',
+                'designation' => 'School Administrator',
+                'department' => 'Administration',
+                'employment_type' => 'full_time',
+                'joining_date' => Carbon::now()->subYears(3)->toDateString(),
+                'email' => 'demo@gmail.com',
+                'phone' => '+91 98765 43210',
+                'status' => 'active',
+            ],
+        );
+
         // --- Teaching staff ---
         $teachers = [
             'Anita Sharma', 'Rahul Verma', 'Priya Nair', 'Sandeep Rao',
@@ -50,7 +68,7 @@ class DemoSchoolSeeder extends Seeder
         ];
         foreach ($teachers as $i => $name) {
             $slug = strtolower(str_replace(' ', '.', $name));
-            User::updateOrCreate(
+            $user = User::updateOrCreate(
                 ['school_id' => $school->id, 'email' => "{$slug}@demoschool.edu"],
                 [
                     'name' => $name,
@@ -58,6 +76,27 @@ class DemoSchoolSeeder extends Seeder
                     'role' => $i === 0 ? 'principal' : 'teacher',
                     'status' => 'active',
                     'password' => Hash::make('Teacher@123'),
+                ],
+            );
+
+            [$firstName, $lastName] = explode(' ', $name, 2);
+
+            Employee::updateOrCreate(
+                ['school_id' => $school->id, 'employee_code' => 'EMP'.str_pad((string) ($i + 1), 3, '0', STR_PAD_LEFT)],
+                [
+                    'user_id' => $user->id,
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
+                    'employee_type' => 'teaching',
+                    'designation' => $i === 0 ? 'Principal' : 'Teacher',
+                    'department' => $i % 2 === 0 ? 'Primary' : 'Senior',
+                    'employment_type' => 'full_time',
+                    'joining_date' => Carbon::now()->subYears(random_int(1, 8))->toDateString(),
+                    'qualification' => $i === 0 ? 'M.Ed' : 'B.Ed',
+                    'experience_years' => random_int(2, 15),
+                    'email' => "{$slug}@demoschool.edu",
+                    'phone' => '+91 9'.str_pad((string) (800000000 + $i), 9, '0', STR_PAD_LEFT),
+                    'status' => 'active',
                 ],
             );
         }

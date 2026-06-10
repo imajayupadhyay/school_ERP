@@ -6,12 +6,15 @@ interface ModalProps {
   description?: string
   onClose: () => void
   children: ReactNode
+  size?: 'md' | 'lg'
 }
 
-export default function Modal({ title, description, onClose, children }: ModalProps) {
+export default function Modal({ title, description, onClose, children, size = 'md' }: ModalProps) {
+  const widthClass = size === 'lg' ? 'max-w-4xl' : 'max-w-lg'
+
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-ink/40 backdrop-blur-sm p-4">
-      <div className="w-full max-w-lg rounded-2xl border border-line bg-white p-5 sm:p-6 shadow-xl">
+      <div className={`max-h-[92vh] w-full overflow-y-auto rounded-2xl border border-line bg-white p-5 shadow-xl sm:p-6 ${widthClass}`}>
         <div className="mb-4 flex items-start justify-between gap-4">
           <div>
             <h2 className="text-[1.05rem] font-bold tracking-[-0.01em] text-ink">{title}</h2>

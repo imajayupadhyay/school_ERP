@@ -52,14 +52,23 @@ Completed:
   - Shared frontend components promoted to `features/admin/components/`: `FormField`, `SectionCard`, new `Modal`, `StatusBadge`; `extractErrorMessage` moved to `src/lib/errors.ts`.
   - Backend feature tests in `tests/Feature/Academic/` (18 tests: sessions, classes, sections, subjects incl. set-current, delete-current guard, class-subject sync, role checks, uniqueness validation). Full suite: 32/32 passing.
   - Verified via curl smoke test against the demo school (sessions create/update/set-current, sections, subjects, class-subject sync) and `npm run build` (177 modules, no TS errors).
+- Employee and Teacher Management module (Phase 3, item 4):
+  - New tables: `employees` (profile, contact, employment, status, optional linked `user_id`, soft deletes) and `employee_assignments` (teacher assignment to class, optional section, optional subject, assignment type). Both use tenant `school_id`; `Employee` and `EmployeeAssignment` use `BelongsToSchool`.
+  - Employee login access is managed through linked `users` records: creating/updating employees can create/update login users, assign role/status, and disabling/deleting employees deactivates the linked login.
+  - API: paginated/searchable/filterable `GET /api/v1/employees`, `POST /employees`, `GET /employees/{id}`, `PUT /employees/{id}`, `DELETE /employees/{id}`, and `PUT /employees/{id}/assignments`. Writes restricted to `school_admin`/`principal`/`super_admin`, audit-logged.
+  - Assignment validation enforces tenant-safe class/section/subject references, checks section belongs to the selected class, checks subject is mapped to the selected class, and rejects duplicate assignment rows.
+  - Dashboard staff/teacher counts now come from `employees`, so staff without login accounts are counted correctly. `DemoSchoolSeeder` now seeds employee profiles linked to demo admin/teacher users.
+  - Web: `/admin/employees` — Teachers & Staff sidebar item enabled; list includes search, type/status filters, pagination, login/status badges, add/edit employee modal, login toggle, delete confirmation, and assignment modal.
+  - Backend feature tests in `tests/Feature/Employees/EmployeeTest.php` (8 tests covering create with login, tenant-scoped pagination/search, duplicate validation, role checks, update/login disable, assignment sync/validation, soft delete/login deactivation). Full suite: 40/40 passing.
+  - Verified with `npm run build` in `webapp/` (179 modules, no TS errors).
 
 Not Started:
 
 - Full RBAC (permission tables / action-level permissions) — currently a single `role` string per user.
-- School Admin CRUD modules (Students, Teachers, Classes, Attendance, Fees, Exams, Notices) — sidebar items present, marked "Soon".
+- School Admin CRUD modules still remaining: Students, Parents/Guardians, Attendance, Fees, Exams/Results, Homework/Study Material, Notices/Communication, Reports.
 - Platform Super Admin web panel.
 - Student, Parent, and Teacher/Employee portals.
-- Audit logs, file uploads.
+- Audit log viewing/reporting and broader file upload workflows.
 - Android and iOS apps.
 
 ## Main Build Direction

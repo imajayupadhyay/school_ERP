@@ -24,7 +24,7 @@ interface NavItem {
 const primaryNav: NavItem[] = [
   { label: 'Dashboard', icon: DashboardIcon, to: '/admin' },
   { label: 'Students', icon: StudentsIcon },
-  { label: 'Teachers & Staff', icon: TeachersIcon },
+  { label: 'Teachers & Staff', icon: TeachersIcon, to: '/admin/employees' },
   { label: 'Classes', icon: ClassesIcon, to: '/admin/academic-setup' },
   { label: 'Attendance', icon: AttendanceIcon },
   { label: 'Fees', icon: FeesIcon },

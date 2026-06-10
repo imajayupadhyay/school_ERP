@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\Employee;
 use App\Models\School;
 use App\Models\Student;
-use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -23,9 +23,13 @@ class DashboardService
         $studentsTotal = Student::forSchool($schoolId)->count();
         $studentsActive = Student::forSchool($schoolId)->where('status', 'active')->count();
 
-        $staffRoles = ['principal', 'teacher', 'accountant', 'librarian', 'staff'];
-        $staffTotal = User::where('school_id', $schoolId)->whereIn('role', $staffRoles)->count();
-        $teachersTotal = User::where('school_id', $schoolId)->where('role', 'teacher')->count();
+        $staffTotal = Employee::forSchool($schoolId)
+            ->whereIn('status', ['active', 'on_leave'])
+            ->count();
+        $teachersTotal = Employee::forSchool($schoolId)
+            ->where('employee_type', 'teaching')
+            ->whereIn('status', ['active', 'on_leave'])
+            ->count();
 
         $classesTotal = Student::forSchool($schoolId)
             ->whereNotNull('class_name')
