@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\AcademicSession;
 use App\Models\Employee;
+use App\Models\Guardian;
 use App\Models\School;
 use App\Models\SchoolClass;
 use App\Models\Section;
@@ -168,6 +169,8 @@ class DemoSchoolSeeder extends Seeder
                     }
                 });
 
+            $this->seedGuardians($school);
+
             return;
         }
 
@@ -206,5 +209,55 @@ class DemoSchoolSeeder extends Seeder
                 }
             }
         }
+
+        $this->seedGuardians($school);
+    }
+
+    private function seedGuardians(School $school): void
+    {
+        if (Guardian::where('school_id', $school->id)->exists()) {
+            return;
+        }
+
+        Student::where('school_id', $school->id)
+            ->orderBy('id')
+            ->limit(30)
+            ->get()
+            ->each(function (Student $student, int $index) use ($school) {
+                $relationship = $index % 2 === 0 ? 'Father' : 'Mother';
+                $guardianName = $student->guardian_name ?: ($relationship === 'Father' ? 'Ravi Sharma' : 'Anita Sharma');
+                $email = 'parent.'.strtolower((string) $student->admission_no).'@demoschool.edu';
+
+                $user = User::updateOrCreate(
+                    ['school_id' => $school->id, 'email' => $email],
+                    [
+                        'name' => $guardianName,
+                        'phone' => $student->guardian_phone,
+                        'role' => 'parent',
+                        'status' => 'active',
+                        'password' => Hash::make('Parent@123'),
+                    ],
+                );
+
+                $guardian = Guardian::create([
+                    'school_id' => $school->id,
+                    'user_id' => $user->id,
+                    'name' => $guardianName,
+                    'relation' => $relationship,
+                    'phone' => $student->guardian_phone,
+                    'email' => $email,
+                    'occupation' => $relationship === 'Father' ? 'Business' : 'Service',
+                    'address' => $student->current_address,
+                    'status' => 'active',
+                ]);
+
+                $guardian->students()->attach($student->id, [
+                    'school_id' => $school->id,
+                    'relationship' => $relationship,
+                    'is_primary' => true,
+                    'is_emergency_contact' => true,
+                    'pickup_allowed' => true,
+                ]);
+            });
     }
 }

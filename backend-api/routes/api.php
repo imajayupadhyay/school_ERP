@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\Academic\SubjectController;
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\Employees\EmployeeController;
+use App\Http\Controllers\Api\V1\Guardians\GuardianController;
 use App\Http\Controllers\Api\V1\SchoolProfileController;
 use App\Http\Controllers\Api\V1\Students\StudentController;
 use Illuminate\Support\Facades\Route;
@@ -72,5 +73,13 @@ Route::prefix('v1')->group(function () {
         Route::post('/students/{student}/transfer', [StudentController::class, 'transfer']);
         Route::post('/students/{student}/photo', [StudentController::class, 'uploadPhoto']);
         Route::get('/students/{student}/history', [StudentController::class, 'history']);
+
+        Route::get('/guardians', [GuardianController::class, 'index']);
+        Route::post('/guardians', [GuardianController::class, 'store']);
+        Route::get('/guardians/{guardian}', [GuardianController::class, 'show']);
+        Route::put('/guardians/{guardian}', [GuardianController::class, 'update']);
+        Route::delete('/guardians/{guardian}', [GuardianController::class, 'destroy']);
+        Route::put('/guardians/{guardian}/students', [GuardianController::class, 'syncStudents']);
+        Route::post('/guardians/{guardian}/reset-password', [GuardianController::class, 'resetPassword']);
     });
 });

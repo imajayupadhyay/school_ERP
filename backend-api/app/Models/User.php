@@ -66,6 +66,12 @@ class User extends Authenticatable
         return $this->hasOne(Employee::class);
     }
 
+    /** @return HasOne<Guardian, $this> */
+    public function guardian(): HasOne
+    {
+        return $this->hasOne(Guardian::class);
+    }
+
     public function isSchoolAdmin(): bool
     {
         return $this->role === 'school_admin';

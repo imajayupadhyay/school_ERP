@@ -70,11 +70,20 @@ Completed:
   - `DemoSchoolSeeder` now creates demo academic sessions/classes/sections/subjects and backfills demo students to normalized class/section IDs so admin filters work with demo data.
   - Backend feature tests in `tests/Feature/Students/StudentManagementTest.php` (8 tests covering create with guardian, tenant-scoped filtering, duplicate validation, role checks, archive/transfer, promote, photo, history, export). Full suite: 48/48 passing.
   - Verified with `npm run build` in `webapp/` (181 modules, no TS errors; Vite reports a chunk-size warning after larger admin screens).
+- Parent & Guardian Management module (Phase 3, item 7):
+  - Uses `guardians` and `guardian_student` created during Student Management; guardian records can now be managed as a first-class admin module with linked parent portal users (`users.role = parent`).
+  - API: admin/principal-only `GET/POST/GET one/PUT/DELETE /api/v1/guardians`, `PUT /guardians/{id}/students` for multi-child linking, and `POST /guardians/{id}/reset-password` for parent portal password reset.
+  - Security: guardian contact data is treated as sensitive until full RBAC exists; only `school_admin`, `principal`, and `super_admin` can access guardian management APIs.
+  - Child linking supports multiple students per guardian, one guardian across multiple children, relationship labels, primary guardian, emergency contact, and pickup permission flags. Marking a guardian primary updates the student's primary guardian contact fields and clears older primary flags for that student.
+  - Web: `/admin/guardians` — Parents & Guardians sidebar item enabled; list includes search, status/portal filters, pagination, profile modal, add/edit modal, portal access toggle, child-link modal, reset password, and archive action.
+  - `DemoSchoolSeeder` now creates linked guardian records and parent portal demo users for the first demo students. Parent demo accounts use password `Parent@123`.
+  - Backend feature tests in `tests/Feature/Guardians/GuardianManagementTest.php` (6 tests covering portal login creation, tenant-scoped restricted listing, child linking/primary behavior, duplicate link validation, portal disable, password reset, archive). Full suite: 54/54 passing.
+  - Verified with `npm run build` in `webapp/` (183 modules, no TS errors; Vite reports a chunk-size warning after larger admin screens).
 
 Not Started:
 
 - Full RBAC (permission tables / action-level permissions) — currently a single `role` string per user.
-- School Admin CRUD modules still remaining: Parents/Guardians, Attendance, Fees, Exams/Results, Homework/Study Material, Notices/Communication, Reports.
+- School Admin CRUD modules still remaining: Attendance, Fees, Exams/Results, Homework/Study Material, Notices/Communication, Reports.
 - Platform Super Admin web panel.
 - Student, Parent, and Teacher/Employee portals.
 - Audit log viewing/reporting and broader file upload workflows.

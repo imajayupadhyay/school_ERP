@@ -3,6 +3,7 @@ import type { ComponentType, SVGProps } from 'react'
 import {
   DashboardIcon,
   StudentsIcon,
+  ParentsIcon,
   TeachersIcon,
   ClassesIcon,
   AttendanceIcon,
@@ -24,6 +25,7 @@ interface NavItem {
 const primaryNav: NavItem[] = [
   { label: 'Dashboard', icon: DashboardIcon, to: '/admin' },
   { label: 'Students', icon: StudentsIcon, to: '/admin/students' },
+  { label: 'Parents & Guardians', icon: ParentsIcon, to: '/admin/guardians' },
   { label: 'Teachers & Staff', icon: TeachersIcon, to: '/admin/employees' },
   { label: 'Classes', icon: ClassesIcon, to: '/admin/academic-setup' },
   { label: 'Attendance', icon: AttendanceIcon },

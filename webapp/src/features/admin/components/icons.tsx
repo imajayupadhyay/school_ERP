@@ -33,6 +33,12 @@ export const TeachersIcon = (p: IconProps) => (
   </svg>
 )
 
+export const ParentsIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm6.5 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM9 13c-3.31 0-6 1.57-6 3.5V20h12v-3.5C15 14.57 12.31 13 9 13Zm6.5.5c-.75 0-1.45.08-2.09.23 1.56.79 2.59 1.96 2.59 3.27V20h5v-3c0-1.93-2.46-3.5-5.5-3.5Z" />
+  </svg>
+)
+
 export const ClassesIcon = (p: IconProps) => (
   <svg {...base(p)}>
     <path d="M4 4h12a2 2 0 0 1 2 2v14l-5-3-5 3V6H4V4Zm14 2v11.36l2 1.2V6a2 2 0 0 0-2-2v2Z" />

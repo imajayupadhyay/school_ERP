@@ -8,6 +8,7 @@ import SchoolProfilePage from '@/features/admin/school-profile/SchoolProfilePage
 import AcademicSetupPage from '@/features/admin/academic-setup/AcademicSetupPage'
 import EmployeePage from '@/features/admin/employees/EmployeePage'
 import StudentPage from '@/features/admin/students/StudentPage'
+import GuardianPage from '@/features/admin/guardians/GuardianPage'
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
           <Route path="academic-setup" element={<AcademicSetupPage />} />
           <Route path="employees" element={<EmployeePage />} />
           <Route path="students" element={<StudentPage />} />
+          <Route path="guardians" element={<GuardianPage />} />
         </Route>
       </Route>
 
