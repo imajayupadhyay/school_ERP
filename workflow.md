@@ -6,7 +6,7 @@ This file is the project memory for the SchoolLID ERP build. Every AI agent and 
 
 ## Current Project State
 
-Status as of: 2026-06-10
+Status as of: 2026-06-11
 
 Completed:
 
@@ -79,11 +79,22 @@ Completed:
   - `DemoSchoolSeeder` now creates linked guardian records and parent portal demo users for the first demo students. Parent demo accounts use password `Parent@123`.
   - Backend feature tests in `tests/Feature/Guardians/GuardianManagementTest.php` (6 tests covering portal login creation, tenant-scoped restricted listing, child linking/primary behavior, duplicate link validation, portal disable, password reset, archive). Full suite: 54/54 passing.
   - Verified with `npm run build` in `webapp/` (183 modules, no TS errors; Vite reports a chunk-size warning after larger admin screens).
+- Fees & Payment Management module (Phase 3, item 9):
+  - Full instalment billing engine. New tables (all `BelongsToSchool`): `fee_heads` (fee components — Tuition, Transport, Admission, Exam, Library, Sports…), `fee_structures` (per academic-session + class, school-wide when `class_id` null) and `fee_structure_items` (head + per-occurrence amount + frequency), `student_fee_assignments` + `student_fee_items` (the structure is **snapshotted** onto the student so later structure edits never change assigned dues; holds per-head discounts and custom one-off lines), `fee_invoices` + `fee_invoice_items` (dated instalments with per-head breakdown), and `fee_payments` (collection ledger).
+  - Frequencies (`one_time`/`monthly`/`quarterly`/`half_yearly`/`annual`) drive instalment generation across the session window: monthly→one invoice per session month, quarterly→every 3rd month, half_yearly→every 6th, annual/one_time→once; charges due in the same month are merged into one invoice. Overdue is derived (`balance > 0 && due_date < today`), not stored. Sequential `INV-{school}-{n}` and `RCP-{school}-{n}` numbering.
+  - Services keep controllers thin: `App\Services\Fees\InvoiceGeneratorService` (expands items → invoices; **payment-safe regeneration** — preserves invoices that already have collected money, rebuilds only the still-open months, anchors one-time/annual fees to the first open month, and never re-bills a one-off already paid), `FeeAssignmentService` (snapshot + assign + edit-items + reassign/cancel; reassigning to a different structure is still blocked when payments exist), `FeePaymentService` (records/voids payments, allocates to invoice, recomputes paid/partial/paid status — supports partial payments).
+  - API (admin/principal/super_admin for writes; audit-logged): `GET/POST/GET one/PUT/DELETE /api/v1/fee-heads`; same for `/fee-structures` (nested `items[]` sync, `?academic_session_id=&class_id=` filters); `GET /fees/students` (Collections roster with billed/paid/outstanding/overdue aggregates), `GET /fees/students/{student}` (plan + items + invoices + summary), `POST .../assign`, `PUT .../items`, `POST .../cancel`; `GET/POST /fee-payments`, `GET /fee-payments/{id}`, `POST /fee-payments/{id}/void`. Discounts per fee head (none/percent/fixed) + custom lines; payment modes cash/cheque/online/card/upi/bank_transfer.
+  - Web: `/admin/fees` — Fees sidebar item enabled; tabbed page (Collections | Fee Structures | Fee Heads). Collections roster (search + class filter + pagination, status badges) opens a **StudentFeeDrawer** showing summary, plan items (with discounts/custom flags), instalment table with per-invoice **Collect** action, payment history with void, and an assign-plan panel for students without a plan. A **PlanEditorModal** ("Edit plan") gives a full per-student custom plan editor: add any fee head or a free custom line, set amount/frequency/per-line discount, and tick/untick **Bill** to include optional fees or hold a line — saving regenerates invoices payment-safely. Fee Structures modal builds dynamic line items; Fee Heads CRUD modal. Shared `StatusBadge` extended with paid/partial/pending/overdue/cancelled.
+  - Student admission flow: the student create/edit modal (`StudentPage`) now has an optional **Fee Plan** section — pick a structure (filtered to the student's class + school-wide) and an optional discount; on save the plan is assigned and invoices generated in one flow (edit only reassigns when a structure is actively chosen).
+  - `DemoSchoolSeeder` extended: 6 fee heads, a structure per class, 24 assigned plans (every 5th student gets a 10% sibling concession), generated invoices, and sample full/partial payments. Fresh seed yields 288 invoices / 48 payments with mixed paid/partial/pending statuses.
+  - Backend feature tests in `tests/Feature/Fees/FeeManagementTest.php` (21 tests: fee-head/structure CRUD + uniqueness + role checks, instalment counts per frequency, optional-item exclusion, discount math, custom lines, reassignment, partial/full payment + sequential receipts, overpayment rejection, payment void, payment-safe editing — preserves paid invoices / rebuilds unpaid / anchors mid-year one-offs / never double-bills a paid one-off / turns an optional fee on for a student, tenant isolation). Full suite: 75/75 passing.
+  - Verified end-to-end with curl against the demo school (login → roster aggregates → student plan → partial payment → overpayment 422 → teacher 403 on writes / 200 read → edit plan to add an optional + custom fee and confirm invoices regenerate) and `npm run build` in `webapp/` (193 modules, no TS errors).
 
 Not Started:
 
 - Full RBAC (permission tables / action-level permissions) — currently a single `role` string per user.
-- School Admin CRUD modules still remaining: Attendance, Fees, Exams/Results, Homework/Study Material, Notices/Communication, Reports.
+- School Admin CRUD modules still remaining: Attendance, Exams/Results, Homework/Study Material, Notices/Communication, Reports.
+- Fees module follow-ups (out of scope this round): printable PDF receipts, fee reminders/notifications, late-fee fines, online payment gateway, bulk invoice regeneration, and a dedicated Accountant role (collection currently gated to school_admin/principal/super_admin until full RBAC lands).
 - Platform Super Admin web panel.
 - Student, Parent, and Teacher/Employee portals.
 - Audit log viewing/reporting and broader file upload workflows.

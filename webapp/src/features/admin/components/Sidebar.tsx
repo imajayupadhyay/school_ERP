@@ -29,7 +29,7 @@ const primaryNav: NavItem[] = [
   { label: 'Teachers & Staff', icon: TeachersIcon, to: '/admin/employees' },
   { label: 'Classes', icon: ClassesIcon, to: '/admin/academic-setup' },
   { label: 'Attendance', icon: AttendanceIcon },
-  { label: 'Fees', icon: FeesIcon },
+  { label: 'Fees', icon: FeesIcon, to: '/admin/fees' },
   { label: 'Exams & Results', icon: ExamsIcon },
   { label: 'Notices', icon: NoticesIcon },
 ]

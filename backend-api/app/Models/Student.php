@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Student extends Model
 {
@@ -101,6 +102,18 @@ class Student extends Model
         return $this->belongsToMany(Guardian::class, 'guardian_student')
             ->withPivot(['school_id', 'relationship', 'is_primary', 'is_emergency_contact', 'pickup_allowed'])
             ->withTimestamps();
+    }
+
+    /** @return HasMany<StudentFeeAssignment, $this> */
+    public function feeAssignments(): HasMany
+    {
+        return $this->hasMany(StudentFeeAssignment::class);
+    }
+
+    /** @return HasMany<FeeInvoice, $this> */
+    public function feeInvoices(): HasMany
+    {
+        return $this->hasMany(FeeInvoice::class);
     }
 
     public function getFullNameAttribute(): string

@@ -4,6 +4,10 @@ namespace Database\Seeders;
 
 use App\Models\AcademicSession;
 use App\Models\Employee;
+use App\Models\FeeHead;
+use App\Models\FeeInvoice;
+use App\Models\FeeStructure;
+use App\Models\FeeStructureItem;
 use App\Models\Guardian;
 use App\Models\School;
 use App\Models\SchoolClass;
@@ -11,6 +15,8 @@ use App\Models\Section;
 use App\Models\Student;
 use App\Models\Subject;
 use App\Models\User;
+use App\Services\Fees\FeeAssignmentService;
+use App\Services\Fees\FeePaymentService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
@@ -170,6 +176,7 @@ class DemoSchoolSeeder extends Seeder
                 });
 
             $this->seedGuardians($school);
+            $this->seedFees($school, $currentSession, $classModels);
 
             return;
         }
@@ -211,6 +218,122 @@ class DemoSchoolSeeder extends Seeder
         }
 
         $this->seedGuardians($school);
+        $this->seedFees($school, $currentSession, $classModels);
+    }
+
+    /**
+     * @param  array<string, SchoolClass>  $classModels
+     */
+    private function seedFees(School $school, AcademicSession $session, array $classModels): void
+    {
+        // Idempotent: only seed fees once per school.
+        if (FeeHead::where('school_id', $school->id)->exists()) {
+            return;
+        }
+
+        $headDefs = [
+            'Tuition Fee' => ['code' => 'TUI', 'optional' => false],
+            'Transport Fee' => ['code' => 'TRA', 'optional' => false],
+            'Admission Fee' => ['code' => 'ADM', 'optional' => false],
+            'Examination Fee' => ['code' => 'EXM', 'optional' => false],
+            'Library Fee' => ['code' => 'LIB', 'optional' => false],
+            'Sports Fee' => ['code' => 'SPT', 'optional' => true],
+        ];
+
+        $heads = [];
+        foreach ($headDefs as $name => $meta) {
+            $heads[$name] = FeeHead::create([
+                'school_id' => $school->id,
+                'name' => $name,
+                'code' => $meta['code'],
+                'is_optional' => $meta['optional'],
+                'status' => 'active',
+            ]);
+        }
+
+        // One structure per class, with class-scaled amounts.
+        $structures = [];
+        foreach ($classModels as $className => $class) {
+            $classIndex = max($class->sequence - 1, 0);
+
+            $structure = FeeStructure::create([
+                'school_id' => $school->id,
+                'academic_session_id' => $session->id,
+                'class_id' => $class->id,
+                'name' => "{$className} Fees {$session->name}",
+                'status' => 'active',
+            ]);
+
+            $lines = [
+                ['head' => 'Tuition Fee', 'amount' => 2000 + ($classIndex * 200), 'frequency' => 'monthly', 'optional' => false],
+                ['head' => 'Transport Fee', 'amount' => 1000, 'frequency' => 'monthly', 'optional' => false],
+                ['head' => 'Admission Fee', 'amount' => 5000, 'frequency' => 'one_time', 'optional' => false],
+                ['head' => 'Examination Fee', 'amount' => 1500, 'frequency' => 'quarterly', 'optional' => false],
+                ['head' => 'Library Fee', 'amount' => 800, 'frequency' => 'annual', 'optional' => false],
+                ['head' => 'Sports Fee', 'amount' => 1200, 'frequency' => 'annual', 'optional' => true],
+            ];
+
+            foreach ($lines as $line) {
+                FeeStructureItem::create([
+                    'school_id' => $school->id,
+                    'fee_structure_id' => $structure->id,
+                    'fee_head_id' => $heads[$line['head']]->id,
+                    'amount' => $line['amount'],
+                    'frequency' => $line['frequency'],
+                    'is_optional' => $line['optional'],
+                ]);
+            }
+
+            $structures[$class->id] = $structure;
+        }
+
+        // Assign plans to a demonstrative subset, then collect a few payments.
+        $assignmentService = app(FeeAssignmentService::class);
+        $paymentService = app(FeePaymentService::class);
+        $collector = User::where('school_id', $school->id)->where('role', 'school_admin')->first();
+
+        $students = Student::where('school_id', $school->id)
+            ->whereNotNull('class_id')
+            ->orderBy('id')
+            ->limit(24)
+            ->get();
+
+        foreach ($students as $index => $student) {
+            $structure = $structures[$student->class_id] ?? null;
+
+            if ($structure === null) {
+                continue;
+            }
+
+            // Every 5th student gets a 10% sibling concession.
+            $options = $index % 5 === 0
+                ? ['discount_type' => 'percent', 'discount_value' => 10, 'discount_reason' => 'Sibling concession']
+                : [];
+
+            $assignment = $assignmentService->assignStructure($student, $structure, $options);
+
+            if ($collector === null) {
+                continue;
+            }
+
+            $invoices = FeeInvoice::where('student_fee_assignment_id', $assignment->id)
+                ->orderBy('due_date')
+                ->get();
+
+            // Pay the first 1-3 invoices; leave one partial for variety.
+            $payCount = ($index % 3) + 1;
+            foreach ($invoices->take($payCount) as $position => $invoice) {
+                $amount = ($index % 4 === 0 && $position === $payCount - 1)
+                    ? round((float) $invoice->total_amount / 2, 2) // a partial payment
+                    : (float) $invoice->total_amount;
+
+                $paymentService->record($invoice, [
+                    'amount' => $amount,
+                    'mode' => ['cash', 'upi', 'online', 'card'][$index % 4],
+                    'paid_on' => Carbon::now()->subDays(random_int(1, 40))->toDateString(),
+                ], $collector);
+            }
+        }
     }
 
     private function seedGuardians(School $school): void

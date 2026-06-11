@@ -5,6 +5,8 @@ import { useForm } from 'react-hook-form'
 import { useAuth } from '@/features/auth/AuthContext'
 import { fetchAcademicSessions, fetchClasses } from '@/features/admin/academic-setup/api'
 import type { AcademicSession, SchoolClass } from '@/features/admin/academic-setup/types'
+import { assignStudentFee, fetchFeeStructures } from '@/features/admin/fees/api'
+import type { AssignFeePayload, DiscountType } from '@/features/admin/fees/types'
 import { extractErrorMessage } from '@/lib/errors'
 import FormField, { inputClass } from '../components/FormField'
 import Modal from '../components/Modal'
@@ -100,10 +102,18 @@ export default function StudentPage() {
   const invalidateStudents = () => queryClient.invalidateQueries({ queryKey: ['students'] })
 
   const saveMutation = useMutation({
-    mutationFn: (vars: { id?: number; payload: StudentPayload }) =>
-      vars.id ? updateStudent(vars.id, vars.payload) : createStudent(vars.payload),
+    mutationFn: async (vars: { id?: number; payload: StudentPayload; feePlan?: AssignFeePayload | null }) => {
+      const saved = vars.id ? await updateStudent(vars.id, vars.payload) : await createStudent(vars.payload)
+      // Optionally assign a fee plan in the same flow (admission). Backend
+      // generates invoices and cancels any prior unpaid plan for the session.
+      if (vars.feePlan) {
+        await assignStudentFee(saved.id, vars.feePlan)
+      }
+      return saved
+    },
     onSuccess: () => {
       invalidateStudents()
+      queryClient.invalidateQueries({ queryKey: ['fee-students'] })
       setStudentModal(null)
       setModalError(null)
     },
@@ -379,8 +389,8 @@ export default function StudentPage() {
             setStudentModal(null)
             setModalError(null)
           }}
-          onSubmit={(payload) =>
-            saveMutation.mutate({ id: studentModal === 'new' ? undefined : studentModal.id, payload })
+          onSubmit={(payload, feePlan) =>
+            saveMutation.mutate({ id: studentModal === 'new' ? undefined : studentModal.id, payload, feePlan })
           }
           isSaving={saveMutation.isPending}
           error={modalError}
@@ -531,11 +541,14 @@ function StudentFormModal({
   classes: SchoolClass[]
   sessions: AcademicSession[]
   onClose: () => void
-  onSubmit: (payload: StudentPayload) => void
+  onSubmit: (payload: StudentPayload, feePlan: AssignFeePayload | null) => void
   isSaving: boolean
   error: string | null
 }) {
   const primaryGuardian = student?.guardians.find((guardian) => guardian.is_primary) ?? student?.guardians[0]
+  const [feeStructureId, setFeeStructureId] = useState('')
+  const [feeDiscountType, setFeeDiscountType] = useState<DiscountType>('none')
+  const [feeDiscountValue, setFeeDiscountValue] = useState('')
   const {
     register,
     handleSubmit,
@@ -647,9 +660,27 @@ function StudentFormModal({
   const selectedClassId = watch('class_id')
   const sections = classes.find((schoolClass) => String(schoolClass.id) === selectedClassId)?.sections ?? []
 
+  const { data: feeStructures = [] } = useQuery({
+    queryKey: ['fee-structures', { for: 'student-modal' }],
+    queryFn: () => fetchFeeStructures({ status: 'active' }),
+  })
+  // Show structures for the chosen class (or school-wide structures).
+  const eligibleStructures = feeStructures.filter(
+    (structure) => !structure.class_id || String(structure.class_id) === selectedClassId,
+  )
+
+  const buildFeePlan = (): AssignFeePayload | null => {
+    if (!feeStructureId) return null
+    return {
+      fee_structure_id: Number(feeStructureId),
+      discount_type: feeDiscountType,
+      discount_value: feeDiscountType === 'none' ? undefined : Number(feeDiscountValue || 0),
+    }
+  }
+
   return (
     <Modal title={student ? 'Edit Student' : 'Add Student'} description="Admission, profile, guardian, and health details." onClose={onClose} size="lg">
-      <form onSubmit={handleSubmit((values) => onSubmit(toStudentPayload(values)))} className="space-y-5">
+      <form onSubmit={handleSubmit((values) => onSubmit(toStudentPayload(values), buildFeePlan()))} className="space-y-5">
         {error && <p className="text-[0.82rem] font-medium text-[#dc2626]">{error}</p>}
 
         <FormSection title="Admission">
@@ -842,6 +873,72 @@ function StudentFormModal({
               <input id="previous_school_transfer_certificate_no" className={inputClass} {...register('previous_school_transfer_certificate_no')} />
             </FormField>
           </div>
+        </FormSection>
+
+        <FormSection title="Fee Plan (optional)">
+          {!selectedClassId ? (
+            <p className="text-[0.84rem] text-ink/50">Select a class above to choose a fee structure.</p>
+          ) : eligibleStructures.length === 0 ? (
+            <p className="text-[0.84rem] text-ink/50">
+              No fee structure exists for this class yet. Create one under Fees → Fee Structures, then assign it here or
+              from the Fees page.
+            </p>
+          ) : (
+            <>
+              <div className="grid gap-4 sm:grid-cols-3">
+                <FormField label="Fee Structure" htmlFor="fee_structure_id">
+                  <select
+                    id="fee_structure_id"
+                    className={inputClass}
+                    value={feeStructureId}
+                    onChange={(event) => setFeeStructureId(event.target.value)}
+                  >
+                    <option value="">
+                      {student ? 'Keep current plan' : 'No plan'}
+                    </option>
+                    {eligibleStructures.map((structure) => (
+                      <option key={structure.id} value={structure.id}>
+                        {structure.name}
+                        {structure.class?.name ? ` · ${structure.class.name}` : ' · School-wide'}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+                <FormField label="Discount" htmlFor="fee_discount_type">
+                  <select
+                    id="fee_discount_type"
+                    className={inputClass}
+                    value={feeDiscountType}
+                    onChange={(event) => setFeeDiscountType(event.target.value as DiscountType)}
+                    disabled={!feeStructureId}
+                  >
+                    <option value="none">No discount</option>
+                    <option value="percent">Percent</option>
+                    <option value="fixed">Fixed (per occurrence)</option>
+                  </select>
+                </FormField>
+                <FormField label="Discount Value" htmlFor="fee_discount_value">
+                  <input
+                    id="fee_discount_value"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    className={inputClass}
+                    value={feeDiscountValue}
+                    onChange={(event) => setFeeDiscountValue(event.target.value)}
+                    disabled={feeDiscountType === 'none' || !feeStructureId}
+                    placeholder={feeDiscountType === 'percent' ? 'e.g. 10' : 'Amount'}
+                  />
+                </FormField>
+              </div>
+              {feeStructureId && (
+                <p className="text-[0.74rem] text-ink/45">
+                  On save, this plan is assigned and instalment invoices are generated
+                  {student ? '. Any existing unpaid plan for this session is replaced.' : '.'}
+                </p>
+              )}
+            </>
+          )}
         </FormSection>
 
         <ModalActions onClose={onClose} isSaving={isSaving} />
