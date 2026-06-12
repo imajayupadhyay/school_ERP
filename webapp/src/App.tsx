@@ -12,6 +12,7 @@ import GuardianPage from '@/features/admin/guardians/GuardianPage'
 import FeesPage from '@/features/admin/fees/FeesPage'
 import AttendancePage from '@/features/admin/attendance/AttendancePage'
 import LearningPage from '@/features/admin/learning/LearningPage'
+import ExamsPage from '@/features/admin/exams/ExamsPage'
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
           <Route path="attendance" element={<AttendancePage />} />
           <Route path="fees" element={<FeesPage />} />
           <Route path="learning" element={<LearningPage />} />
+          <Route path="exams" element={<ExamsPage />} />
         </Route>
       </Route>
 

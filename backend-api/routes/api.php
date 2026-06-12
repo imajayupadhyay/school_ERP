@@ -8,6 +8,10 @@ use App\Http\Controllers\Api\V1\Academic\SubjectController;
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\Employees\EmployeeController;
+use App\Http\Controllers\Api\V1\Exams\ExamController;
+use App\Http\Controllers\Api\V1\Exams\ExamMarkController;
+use App\Http\Controllers\Api\V1\Exams\ExamResultController;
+use App\Http\Controllers\Api\V1\Exams\ExamScheduleController;
 use App\Http\Controllers\Api\V1\Fees\FeeController;
 use App\Http\Controllers\Api\V1\Fees\FeeHeadController;
 use App\Http\Controllers\Api\V1\Fees\FeePaymentController;
@@ -101,6 +105,25 @@ Route::prefix('v1')->group(function () {
         Route::put('/study-materials/{studyMaterial}', [StudyMaterialController::class, 'update']);
         Route::delete('/study-materials/{studyMaterial}', [StudyMaterialController::class, 'destroy']);
         Route::post('/study-materials/{studyMaterial}/attachment', [StudyMaterialController::class, 'uploadAttachment']);
+
+        Route::get('/exams', [ExamController::class, 'index']);
+        Route::post('/exams', [ExamController::class, 'store']);
+        Route::get('/exams/{exam}', [ExamController::class, 'show']);
+        Route::put('/exams/{exam}', [ExamController::class, 'update']);
+        Route::delete('/exams/{exam}', [ExamController::class, 'destroy']);
+
+        Route::get('/exam-schedules', [ExamScheduleController::class, 'index']);
+        Route::post('/exam-schedules', [ExamScheduleController::class, 'store']);
+        Route::get('/exam-schedules/{examSchedule}', [ExamScheduleController::class, 'show']);
+        Route::put('/exam-schedules/{examSchedule}', [ExamScheduleController::class, 'update']);
+        Route::delete('/exam-schedules/{examSchedule}', [ExamScheduleController::class, 'destroy']);
+        Route::get('/exam-schedules/{examSchedule}/marks', [ExamMarkController::class, 'roster']);
+        Route::put('/exam-schedules/{examSchedule}/marks', [ExamMarkController::class, 'update']);
+
+        Route::get('/exams/{exam}/results', [ExamResultController::class, 'index']);
+        Route::post('/exams/{exam}/results/publish', [ExamResultController::class, 'publish']);
+        Route::post('/exams/{exam}/results/unpublish', [ExamResultController::class, 'unpublish']);
+        Route::get('/exams/{exam}/students/{student}/result', [ExamResultController::class, 'show']);
 
         Route::get('/guardians', [GuardianController::class, 'index']);
         Route::post('/guardians', [GuardianController::class, 'store']);

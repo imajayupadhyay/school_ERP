@@ -7,6 +7,9 @@ use App\Models\AttendanceRecord;
 use App\Models\AttendanceSession;
 use App\Models\Employee;
 use App\Models\EmployeeAssignment;
+use App\Models\Exam;
+use App\Models\ExamMark;
+use App\Models\ExamSchedule;
 use App\Models\FeeHead;
 use App\Models\FeeInvoice;
 use App\Models\FeeStructure;
@@ -22,6 +25,7 @@ use App\Models\Subject;
 use App\Models\User;
 use App\Services\Fees\FeeAssignmentService;
 use App\Services\Fees\FeePaymentService;
+use App\Services\ExamResultService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
@@ -186,6 +190,7 @@ class DemoSchoolSeeder extends Seeder
             $this->seedFees($school, $currentSession, $classModels);
             $this->seedAttendance($school, $currentSession);
             $this->seedLearningResources($school, $currentSession);
+            $this->seedExams($school, $currentSession);
 
             return;
         }
@@ -230,6 +235,7 @@ class DemoSchoolSeeder extends Seeder
         $this->seedFees($school, $currentSession, $classModels);
         $this->seedAttendance($school, $currentSession);
         $this->seedLearningResources($school, $currentSession);
+        $this->seedExams($school, $currentSession);
     }
 
     /**
@@ -585,6 +591,105 @@ class DemoSchoolSeeder extends Seeder
                 'status' => 'published',
                 'published_at' => Carbon::now()->subDays(1),
             ]);
+        }
+    }
+
+    private function seedExams(School $school, AcademicSession $session): void
+    {
+        if (Exam::where('school_id', $school->id)->exists()) {
+            return;
+        }
+
+        $publisher = User::where('school_id', $school->id)->where('role', 'school_admin')->first();
+
+        if ($publisher === null) {
+            return;
+        }
+
+        $exam = Exam::create([
+            'school_id' => $school->id,
+            'academic_session_id' => $session->id,
+            'name' => 'Term I Examination',
+            'exam_type' => 'term',
+            'start_date' => Carbon::now()->subDays(12)->toDateString(),
+            'end_date' => Carbon::now()->subDays(5)->toDateString(),
+            'description' => 'Demo term examination with published sample results.',
+            'status' => 'completed',
+        ]);
+
+        $classSections = Student::where('school_id', $school->id)
+            ->where('academic_session_id', $session->id)
+            ->where('status', 'active')
+            ->whereNotNull('class_id')
+            ->whereNotNull('section_id')
+            ->select('class_id', 'section_id')
+            ->distinct()
+            ->orderBy('class_id')
+            ->limit(4)
+            ->get();
+
+        $resultService = app(ExamResultService::class);
+
+        foreach ($classSections as $scopeIndex => $scope) {
+            $class = SchoolClass::where('school_id', $school->id)->find($scope->class_id);
+
+            if ($class === null) {
+                continue;
+            }
+
+            $subjects = $class->subjects()->orderBy('subjects.id')->limit(3)->get();
+            $schedules = [];
+
+            foreach ($subjects as $subjectIndex => $subject) {
+                $schedule = ExamSchedule::create([
+                    'school_id' => $school->id,
+                    'exam_id' => $exam->id,
+                    'class_id' => $scope->class_id,
+                    'section_id' => $scope->section_id,
+                    'subject_id' => $subject->id,
+                    'exam_date' => Carbon::now()->subDays(12 - ($subjectIndex * 2))->toDateString(),
+                    'start_time' => '09:00',
+                    'end_time' => '11:00',
+                    'max_marks' => 100,
+                    'passing_marks' => 35,
+                    'room' => 'Room '.($scopeIndex + 1),
+                    'status' => 'completed',
+                ]);
+                $schedules[] = $schedule;
+            }
+
+            $students = Student::where('school_id', $school->id)
+                ->where('academic_session_id', $session->id)
+                ->where('class_id', $scope->class_id)
+                ->where('section_id', $scope->section_id)
+                ->where('status', 'active')
+                ->orderByRaw('CAST(roll_no AS UNSIGNED), roll_no')
+                ->get();
+
+            foreach ($schedules as $scheduleIndex => $schedule) {
+                foreach ($students as $studentIndex => $student) {
+                    $score = 48 + (($studentIndex * 7 + $scheduleIndex * 9 + $scopeIndex * 3) % 48);
+
+                    ExamMark::create([
+                        'school_id' => $school->id,
+                        'exam_schedule_id' => $schedule->id,
+                        'student_id' => $student->id,
+                        'marks_obtained' => $score,
+                        'attendance_status' => 'present',
+                        'entered_by' => $publisher->id,
+                        'status' => 'submitted',
+                    ]);
+                }
+            }
+
+            if ($schedules !== [] && $students->isNotEmpty()) {
+                $resultService->publish(
+                    $exam,
+                    (int) $scope->class_id,
+                    (int) $scope->section_id,
+                    $publisher,
+                );
+            }
         }
     }
 }

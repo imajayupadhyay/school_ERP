@@ -22,6 +22,12 @@ const STATUS_STYLES: Record<string, string> = {
   draft: 'bg-ink/8 text-ink/55',
   submitted: 'bg-[#168a66]/10 text-[#168a66]',
   published: 'bg-[#168a66]/10 text-[#168a66]',
+  scheduled: 'bg-[#2c49a6]/10 text-[#2c49a6]',
+  completed: 'bg-[#168a66]/10 text-[#168a66]',
+  pass: 'bg-[#168a66]/10 text-[#168a66]',
+  fail: 'bg-[#dc2626]/10 text-[#dc2626]',
+  incomplete: 'bg-lime/15 text-[#b45309]',
+  exempt: 'bg-ink/8 text-ink/55',
 }
 
 export default function StatusBadge({ status }: { status: string }) {

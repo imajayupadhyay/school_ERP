@@ -31,7 +31,7 @@ const primaryNav: NavItem[] = [
   { label: 'Classes', icon: ClassesIcon, to: '/admin/academic-setup' },
   { label: 'Attendance', icon: AttendanceIcon, to: '/admin/attendance' },
   { label: 'Fees', icon: FeesIcon, to: '/admin/fees' },
-  { label: 'Exams & Results', icon: ExamsIcon },
+  { label: 'Exams & Results', icon: ExamsIcon, to: '/admin/exams' },
   { label: 'Homework & Materials', icon: HomeworkIcon, to: '/admin/learning' },
   { label: 'Notices', icon: NoticesIcon },
 ]

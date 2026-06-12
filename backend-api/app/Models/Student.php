@@ -122,6 +122,18 @@ class Student extends Model
         return $this->hasMany(AttendanceRecord::class);
     }
 
+    /** @return HasMany<ExamMark, $this> */
+    public function examMarks(): HasMany
+    {
+        return $this->hasMany(ExamMark::class);
+    }
+
+    /** @return HasMany<ExamResult, $this> */
+    public function examResults(): HasMany
+    {
+        return $this->hasMany(ExamResult::class);
+    }
+
     public function getFullNameAttribute(): string
     {
         return trim(collect([$this->first_name, $this->middle_name, $this->last_name])

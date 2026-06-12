@@ -109,11 +109,22 @@ Completed:
   - `DemoSchoolSeeder` now creates sample published homework and study materials for demo classes.
   - Backend feature tests in `tests/Feature/Learning/LearningManagementTest.php` (7 tests covering homework create/upload, teacher scope restrictions, validation, tenant/teacher scoped listing, study material create/update/archive, URL requirement, file upload). Full suite: 88/88 passing.
   - Verified with `npm run build` in `webapp/` (204 modules, no TS errors; Vite still reports the existing large chunk-size warning after admin screens).
+- Exams, Marks & Results module (Phase 3, item 9):
+  - New tenant-scoped tables: `exams`, `exam_schedules`, `exam_marks`, `exam_results`, and `exam_result_items`. Published result items preserve a subject-level report-card snapshot even if later academic setup changes.
+  - Models: `Exam`, `ExamSchedule`, `ExamMark`, `ExamResult`, and `ExamResultItem`; `Student` now exposes marks and results relationships. All school-owned models use `BelongsToSchool`.
+  - API: exam CRUD under `/api/v1/exams`; paper schedule CRUD under `/exam-schedules`; roster-based marks entry at `/exam-schedules/{id}/marks`; scoped result listing, publish/unpublish, and individual report-card endpoints under `/exams/{exam}/results`.
+  - Validation enforces same-school session/class/section/subject/student references, exam dates within the academic session and exam window, valid class-subject mappings, marks within the paper maximum, and correct absent/exempt handling.
+  - Access: school_admin/principal/super_admin manage exams, schedules, and publication; teachers can view and enter marks only for assigned class/section/subject schedules. Published results lock affected marks and schedules until unpublished.
+  - Result engine calculates totals, percentage, grades, and subject-level pass/fail; publication is blocked until every required mark is submitted. Unpublishing removes the result snapshots and unlocks marks for correction.
+  - Web: `/admin/exams` — Exams & Results sidebar item enabled; tabs for Exams & Schedules, Marks Entry, and Results. Includes exam/paper CRUD, assigned-paper rosters, draft/submitted marks, publish/unpublish actions, result summaries, and detailed report-card modal.
+  - `DemoSchoolSeeder` creates a Term I exam across four class/section scopes, schedules up to three subjects per scope, submits marks, and publishes demo results. Verified seed: 1 exam, 12 schedules, 132 marks, and 44 results.
+  - Backend feature tests in `tests/Feature/Exams/ExamManagementTest.php` (8 tests covering CRUD/audit, validation, teacher assignment access, marks rules, grade/result calculation, incomplete publication guard, published lock/unpublish, and tenant isolation). Full suite: 96/96 passing with 393 assertions.
+  - Verified with all five MySQL migrations, targeted ESLint for the new exam UI, and `npm run build` in `webapp/` (210 modules, no TypeScript errors; Vite still reports the existing large chunk-size warning).
 
 Not Started:
 
 - Full RBAC (permission tables / action-level permissions) — currently a single `role` string per user; intentionally deferred to the end of the School Admin module sequence per current direction.
-- School Admin CRUD modules still remaining: Exams/Results, Notices/Communication, Reports.
+- School Admin CRUD modules still remaining: Notices/Communication and Reports.
 - Fees module follow-ups (out of scope this round): printable PDF receipts, fee reminders/notifications, late-fee fines, online payment gateway, bulk invoice regeneration, and a dedicated Accountant role (collection currently gated to school_admin/principal/super_admin until full RBAC lands).
 - Platform Super Admin web panel.
 - Student, Parent, and Teacher/Employee portals.
