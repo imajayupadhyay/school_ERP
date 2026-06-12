@@ -8,6 +8,8 @@ interface AuthContextValue {
   /** True while we are rehydrating an existing token on first load. */
   initializing: boolean
   isAuthenticated: boolean
+  /** True if the current user holds the given permission key (owners → always true). */
+  can: (permission: string) => boolean
   signIn: (payload: LoginPayload) => Promise<User>
   signOut: () => Promise<void>
 }
@@ -51,6 +53,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return loggedIn
   }, [])
 
+  const can = useCallback(
+    (permission: string) => {
+      const perms = user?.permissions
+      if (!perms) return false
+      return perms.includes('*') || perms.includes(permission)
+    },
+    [user],
+  )
+
   const signOut = useCallback(async () => {
     try {
       await authApi.logout()
@@ -64,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, initializing, isAuthenticated: !!user, signIn, signOut }}
+      value={{ user, initializing, isAuthenticated: !!user, can, signIn, signOut }}
     >
       {children}
     </AuthContext.Provider>

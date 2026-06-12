@@ -7,7 +7,6 @@ import { PageHeader, SegmentedTabs, type TabDef } from '../components/PageHeader
 import HomeworkTab from './components/HomeworkTab'
 import MaterialsTab from './components/MaterialsTab'
 
-const EDITOR_ROLES = ['school_admin', 'principal', 'super_admin', 'teacher']
 
 type TabKey = 'homework' | 'materials'
 
@@ -17,8 +16,8 @@ const TABS: TabDef<TabKey>[] = [
 ]
 
 export default function LearningPage() {
-  const { user } = useAuth()
-  const canEdit = !!user && EDITOR_ROLES.includes(user.role)
+  const { can } = useAuth()
+  const canEdit = can('learning.update')
   const [activeTab, setActiveTab] = useState<TabKey>('homework')
 
   const { data: academicSessions = [], isLoading: sessionsLoading } = useQuery({

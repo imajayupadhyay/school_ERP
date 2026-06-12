@@ -15,8 +15,6 @@ class FeeHeadController extends Controller
 {
     use ApiResponse;
 
-    private const EDITOR_ROLES = ['school_admin', 'principal', 'super_admin'];
-
     public function __construct(
         private readonly AuditLogger $auditLogger,
     ) {
@@ -83,10 +81,6 @@ class FeeHeadController extends Controller
     public function destroy(Request $request, FeeHead $feeHead): JsonResponse
     {
         $user = $request->user();
-
-        if (! in_array($user->role, self::EDITOR_ROLES, true)) {
-            return $this->fail('You do not have permission to delete fee heads.', 403);
-        }
 
         $feeHead->delete();
 

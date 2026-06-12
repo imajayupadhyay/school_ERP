@@ -299,6 +299,12 @@ export const KeyIcon = (p: IconProps) => (
   </svg>
 )
 
+export const ShieldIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M12 1 4 4v7c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V4l-8-3Zm-1.2 14.2-3.4-3.4 1.4-1.4 2 2 4.4-4.4 1.4 1.4-5.8 5.8Z" />
+  </svg>
+)
+
 export const LinkIcon = (p: IconProps) => (
   <svg {...base(p)}>
     <path d="M3.9 12a3.1 3.1 0 0 1 3.1-3.1h4V7h-4a5 5 0 0 0 0 10h4v-1.9h-4A3.1 3.1 0 0 1 3.9 12ZM8 13h8v-2H8v2Zm9-6h-4v1.9h4a3.1 3.1 0 0 1 0 6.2h-4V17h4a5 5 0 0 0 0-10Z" />

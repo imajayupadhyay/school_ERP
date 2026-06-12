@@ -47,7 +47,6 @@ import type {
   TransferStudentPayload,
 } from './types'
 
-const EDITOR_ROLES = ['school_admin', 'principal', 'super_admin']
 const PER_PAGE = 12
 
 type StudentFormValues = Record<string, string | boolean | undefined> & {
@@ -74,8 +73,8 @@ type PromoteFormValues = {
 }
 
 export default function StudentPage() {
-  const { user } = useAuth()
-  const canEdit = !!user && EDITOR_ROLES.includes(user.role)
+  const { can } = useAuth()
+  const canEdit = can('students.update')
   const queryClient = useQueryClient()
 
   const [page, setPage] = useState(1)

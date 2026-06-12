@@ -8,8 +8,6 @@ import ExamSetupTab from './components/ExamSetupTab'
 import MarksEntryTab from './components/MarksEntryTab'
 import ResultsTab from './components/ResultsTab'
 
-const MANAGER_ROLES = ['school_admin', 'principal', 'super_admin']
-const MARKER_ROLES = [...MANAGER_ROLES, 'teacher']
 
 type TabKey = 'setup' | 'marks' | 'results'
 
@@ -20,9 +18,9 @@ const TABS: TabDef<TabKey>[] = [
 ]
 
 export default function ExamsPage() {
-  const { user } = useAuth()
-  const canManage = !!user && MANAGER_ROLES.includes(user.role)
-  const canEnterMarks = !!user && MARKER_ROLES.includes(user.role)
+  const { can } = useAuth()
+  const canManage = can('exams.create')
+  const canEnterMarks = can('exams.marks')
   const [activeTab, setActiveTab] = useState<TabKey>('setup')
 
   const { data: academicSessions = [], isLoading: sessionsLoading } = useQuery({

@@ -6,7 +6,7 @@ This file is the project memory for the SchoolLID ERP build. Every AI agent and 
 
 ## Current Project State
 
-Status as of: 2026-06-12
+Status as of: 2026-06-12 (RBAC module added)
 
 Completed:
 
@@ -140,11 +140,19 @@ Completed:
   - Web: `/admin/reports` — Reports & Audit Logs sidebar item enabled. Page uses the admin design system with `PageHeader`, `SegmentedTabs`, filter toolbar, KPI cards, class-level report tables, activity bars, audit log table, pagination, and a detail modal showing before/after field changes.
   - Backend feature tests in `tests/Feature/Reports/ReportAndAuditLogTest.php` (3 tests covering overview aggregates without tenant leakage, filterable/scoped audit logs and summary, and teacher 403 access). Full suite: 109/109 passing with 529 assertions.
   - Verified with `npm run build` in `webapp/` (227 modules, no TypeScript errors; Vite still reports the existing large chunk-size warning).
+- Role & Permission Management / full RBAC (Phase 3, item 13):
+  - Hybrid model: **role permissions ∪ per-user grants − per-user revokes**. Owner roles (`school_admin`, `principal`) and platform `super_admin` resolve to all permissions (`*`) and cannot be locked out.
+  - New global catalog table `permissions` (key `module.action`, grouped, `is_special` flag) seeded from a single registry `config/permissions.php`; tenant-scoped `roles` (+ `role_permissions`) and per-user `user_permissions` (`granted` grant/revoke), and a nullable `users.role_id` FK (the legacy `role` string stays in sync with the role slug for backward compatibility). Permission catalog is the source of truth for the seeder, the API, and the matrix UI — add a module/action there and re-seed, nothing else hardcodes it.
+  - Models `Permission`, `Role`, `UserPermission`; `App\Models\Concerns\HasPermissions` on `User` (`hasPermission()`, `effectivePermissions()`, `isOwner()` — with a backward-compat fallback that resolves from the role string's template when `role_id` is null, so older users and tests still work). `App\Support\PermissionRegistry` reads the config (catalog/grouped/templates/owner slugs). `App\Services\Access\AccessProvisioner` seeds the catalog, provisions a school's default system roles (School Admin & Principal [owner], Accountant, Receptionist, Class Teacher, Subject Teacher, Librarian, Staff), backfills `role_id`, and assigns roles — reusable from seeders and future school-creation flows.
+  - Enforcement: `App\Http\Middleware\EnsurePermission` registered as the `permission` alias and applied as `permission:<key>` to every module route in `routes/api.php`; the scattered `EDITOR_ROLES`/`in_array($user->role,…)` write-guards in controllers and FormRequests were removed (the middleware is now the single backend gate). Teacher `employee_assignments` data-scoping stays in the services (which rosters) — orthogonal to module/action permissions. Special actions are separately gated: `students.export`, `reports.export`, `fees.collect`, `exams.marks` (marks entry, distinct from exam CRUD so teachers can enter marks without creating exams), `exams.publish`. The notices read-feed (index/show/read) stays open to any authenticated user (controller-scoped) for parent/teacher portals; notices management + delivery are gated.
+  - API (`Api/V1/Access/`, all gated `permission:access.view`/`access.manage`, audit-logged): `GET /access/permissions` (grouped catalog), `GET/POST/GET one/PUT/DELETE /access/roles` (custom roles fully editable/deletable; system roles editable, `is_protected` blocks delete; owner role matrix locked), `GET /access/users/{user}` (role + effective perms + overrides), `PUT /access/users/{user}` (assign role + replace overrides), `POST /access/users/{user}/reset-password`, `PUT /access/users/{user}/status`. Tenant + target guards in the controller (User route binding is not school-scoped): cross-school → 404, platform admins → 403, self login-status change → 422. `UserResource` (login + `/auth/me`) now carries `role_id`, `role_label`, `is_owner`, and the effective `permissions[]`.
+  - Web: `AuthContext` exposes `can(key)`; the **Sidebar now filters every module by its `*.view` permission** (a teacher/staff member only sees their allowed modules), routes are wrapped in `RequirePermission` (permission-denied panel otherwise), and each module page's `canEdit`/`canManage` flags are now `can('students.update')` etc. instead of role-string arrays. New **Roles & Permissions** page (`/admin/roles`, `features/admin/access/`) with a roles table and a module×action permission matrix editor (special actions flagged). New **per-employee Access drawer** in Teachers & Staff: assign role, 3-state per-permission overrides (inherit / grant / revoke), reset password, and activate/deactivate the login. `DemoSchoolSeeder` provisions the demo school's roles, backfills users, and adds a sample override (one teacher granted `students.create`, revoked `learning.delete`).
+  - Backend feature tests in `tests/Feature/Access/RbacTest.php` (12 tests: catalog endpoint, owner full access, login payload permissions, custom-role create/sync, role assignment changes effective perms, per-user grant/revoke override, middleware blocks unauthorised writes, reset-password + status toggle, protected/in-use role delete guards, non-manager 403, cross-school tenant isolation). One existing test updated (teachers can no longer view the employee module). Full suite: **121/121 passing** (568 assertions).
+  - Verified with `migrate:fresh --seed`, full `php artisan test`, `npm run build` (233 modules, no TS errors; existing chunk-size warning), and a live curl smoke against the demo school (owner `*` vs Subject Teacher scoped perms; teacher 403 on hidden modules/writes; admin grants `students.create` override → teacher write flips 403→422; reset-password/status 200; cross-school 404).
 
 Not Started:
 
-- Full RBAC (permission tables / action-level permissions) — currently a single `role` string per user; intentionally deferred to the end of the School Admin module sequence per current direction.
-- School Admin module still remaining: Role and permission management / full RBAC.
+- RBAC follow-ups: a dedicated Accountant/Receptionist onboarding flow surfaced in the UI, permission-aware report **export** controls (export endpoints are gated by `reports.export`/`students.export` but the UI export buttons are still gated by the coarser module flag), bulk role assignment, and a `notices.publish` route-level gate (currently publish happens via status on create/update).
 - Notices follow-ups: SMS/email/WhatsApp/push channel providers, delivery provider webhooks/statuses, reusable notification templates, and two-way parent-teacher messaging/meeting requests.
 - Fees module follow-ups (out of scope this round): printable PDF receipts, fee reminders/notifications, late-fee fines, online payment gateway, bulk invoice regeneration, and a dedicated Accountant role (collection currently gated to school_admin/principal/super_admin until full RBAC lands).
 - Reports follow-ups: CSV/PDF exports, scheduled report emails, saved report presets, and deeper module-specific report drilldowns.
@@ -486,7 +494,9 @@ Example path pattern:
 
 ## Current Immediate Next Steps
 
-1. Build full Role and Permission Management / RBAC for the School Admin panel.
-2. Replace broad role checks with module/action permissions across backend APIs and frontend navigation.
-3. Add permission-aware report export controls after RBAC is in place.
-4. Start Platform Super Admin planning after School Admin RBAC is complete.
+School Admin Panel (Phase 3) is now feature-complete (modules 1–13). Next:
+
+1. Surface permission-aware export controls in the UI (the backend already gates `students.export`/`reports.export`; wire the export buttons to those keys).
+2. Add CSV/PDF export + saved presets for Reports, and printable PDF receipts/reminders for Fees.
+3. Begin Platform Super Admin Panel planning (Phase 4): platform dashboard, school creation/onboarding, subscription plans.
+4. Author the Teacher/Employee Portal requirements before building the teacher workflow (Phase 5).

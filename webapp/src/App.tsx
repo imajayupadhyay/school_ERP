@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import HomePage from '@/features/marketing/HomePage'
 import LoginPage from '@/features/auth/LoginPage'
 import ProtectedRoute from '@/features/auth/ProtectedRoute'
+import RequirePermission from '@/features/auth/RequirePermission'
 import AdminLayout from '@/features/admin/AdminLayout'
 import DashboardPage from '@/features/admin/dashboard/DashboardPage'
 import SchoolProfilePage from '@/features/admin/school-profile/SchoolProfilePage'
@@ -15,6 +16,7 @@ import LearningPage from '@/features/admin/learning/LearningPage'
 import ExamsPage from '@/features/admin/exams/ExamsPage'
 import NoticesPage from '@/features/admin/notices/NoticesPage'
 import ReportsPage from '@/features/admin/reports/ReportsPage'
+import AccessPage from '@/features/admin/access/AccessPage'
 
 function App() {
   return (
@@ -27,17 +29,54 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<DashboardPage />} />
-          <Route path="settings" element={<SchoolProfilePage />} />
-          <Route path="academic-setup" element={<AcademicSetupPage />} />
-          <Route path="employees" element={<EmployeePage />} />
-          <Route path="students" element={<StudentPage />} />
-          <Route path="guardians" element={<GuardianPage />} />
-          <Route path="attendance" element={<AttendancePage />} />
-          <Route path="fees" element={<FeesPage />} />
-          <Route path="learning" element={<LearningPage />} />
-          <Route path="exams" element={<ExamsPage />} />
-          <Route path="notices" element={<NoticesPage />} />
-          <Route path="reports" element={<ReportsPage />} />
+          <Route
+            path="settings"
+            element={<RequirePermission permission="settings.view"><SchoolProfilePage /></RequirePermission>}
+          />
+          <Route
+            path="academic-setup"
+            element={<RequirePermission permission="academic.view"><AcademicSetupPage /></RequirePermission>}
+          />
+          <Route
+            path="employees"
+            element={<RequirePermission permission="employees.view"><EmployeePage /></RequirePermission>}
+          />
+          <Route
+            path="students"
+            element={<RequirePermission permission="students.view"><StudentPage /></RequirePermission>}
+          />
+          <Route
+            path="guardians"
+            element={<RequirePermission permission="guardians.view"><GuardianPage /></RequirePermission>}
+          />
+          <Route
+            path="attendance"
+            element={<RequirePermission permission="attendance.view"><AttendancePage /></RequirePermission>}
+          />
+          <Route
+            path="fees"
+            element={<RequirePermission permission="fees.view"><FeesPage /></RequirePermission>}
+          />
+          <Route
+            path="learning"
+            element={<RequirePermission permission="learning.view"><LearningPage /></RequirePermission>}
+          />
+          <Route
+            path="exams"
+            element={<RequirePermission permission="exams.view"><ExamsPage /></RequirePermission>}
+          />
+          <Route
+            path="notices"
+            element={<RequirePermission permission="notices.view"><NoticesPage /></RequirePermission>}
+          />
+          <Route
+            path="reports"
+            element={<RequirePermission permission="reports.view"><ReportsPage /></RequirePermission>}
+          />
+          <Route
+            path="roles"
+            element={<RequirePermission permission="access.view"><AccessPage /></RequirePermission>}
+          />
         </Route>
       </Route>
 

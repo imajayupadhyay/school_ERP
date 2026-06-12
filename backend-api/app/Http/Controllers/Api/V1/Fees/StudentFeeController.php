@@ -20,8 +20,6 @@ class StudentFeeController extends Controller
 {
     use ApiResponse;
 
-    private const EDITOR_ROLES = ['school_admin', 'principal', 'super_admin'];
-
     public function __construct(
         private readonly AuditLogger $auditLogger,
         private readonly FeeAssignmentService $assignmentService,
@@ -82,10 +80,6 @@ class StudentFeeController extends Controller
     public function cancel(Request $request, Student $student): JsonResponse
     {
         $user = $request->user();
-
-        if (! in_array($user->role, self::EDITOR_ROLES, true)) {
-            return $this->fail('You do not have permission to cancel fee plans.', 403);
-        }
 
         $assignment = $this->activeAssignment($student);
 

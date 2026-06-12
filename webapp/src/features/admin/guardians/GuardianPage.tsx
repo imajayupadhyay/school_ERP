@@ -38,7 +38,6 @@ import type {
   GuardianStudentRef,
 } from './types'
 
-const MANAGER_ROLES = ['school_admin', 'principal', 'super_admin']
 const PER_PAGE = 12
 
 type GuardianFormValues = Record<string, string | boolean | undefined> & {
@@ -58,8 +57,8 @@ type ChildDraft = {
 }
 
 export default function GuardianPage() {
-  const { user } = useAuth()
-  const canManage = !!user && MANAGER_ROLES.includes(user.role)
+  const { can } = useAuth()
+  const canManage = can('guardians.update')
   const queryClient = useQueryClient()
 
   const [page, setPage] = useState(1)

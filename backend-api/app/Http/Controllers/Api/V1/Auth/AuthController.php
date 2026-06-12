@@ -50,7 +50,7 @@ class AuthController extends Controller
         }
 
         $token = $user->createToken('web')->plainTextToken;
-        $user->load('school');
+        $user->load('school', 'roleModel.permissions', 'permissionOverrides.permission');
 
         return $this->ok([
             'token' => $token,
@@ -61,7 +61,7 @@ class AuthController extends Controller
     /** Current authenticated user + their school. */
     public function me(Request $request): JsonResponse
     {
-        $user = $request->user()->load('school');
+        $user = $request->user()->load('school', 'roleModel.permissions', 'permissionOverrides.permission');
 
         return $this->ok(new UserResource($user));
     }

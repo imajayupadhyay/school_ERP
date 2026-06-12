@@ -9,8 +9,6 @@ use Illuminate\Validation\Validator;
 
 class EmployeeRequest extends FormRequest
 {
-    private const EDITOR_ROLES = ['school_admin', 'principal', 'super_admin'];
-
     private const LOGIN_ROLES = [
         'school_admin',
         'principal',
@@ -27,7 +25,7 @@ class EmployeeRequest extends FormRequest
     {
         $user = $this->user();
 
-        return $user !== null && in_array($user->role, self::EDITOR_ROLES, true);
+        return $user !== null;
     }
 
     /**

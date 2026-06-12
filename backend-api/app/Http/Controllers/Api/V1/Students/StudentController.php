@@ -22,8 +22,6 @@ class StudentController extends Controller
 {
     use ApiResponse;
 
-    private const EDITOR_ROLES = ['school_admin', 'principal', 'super_admin'];
-
     public function __construct(
         private readonly AuditLogger $auditLogger,
         private readonly StudentService $studentService,
@@ -72,10 +70,6 @@ class StudentController extends Controller
     public function export(Request $request): StreamedResponse|JsonResponse
     {
         $user = $request->user();
-
-        if (! in_array($user->role, self::EDITOR_ROLES, true)) {
-            return $this->fail('You do not have permission to export students.', 403);
-        }
 
         $students = $this->studentQuery($request)
             ->orderBy('class_name')
@@ -197,10 +191,6 @@ class StudentController extends Controller
     {
         $user = $request->user();
 
-        if (! in_array($user->role, self::EDITOR_ROLES, true)) {
-            return $this->fail('You do not have permission to archive students.', 403);
-        }
-
         $original = $student->only(['status']);
         $student->update(['status' => 'archived']);
 
@@ -260,10 +250,6 @@ class StudentController extends Controller
     public function uploadPhoto(Request $request, Student $student): JsonResponse
     {
         $user = $request->user();
-
-        if (! in_array($user->role, self::EDITOR_ROLES, true)) {
-            return $this->fail('You do not have permission to update student photos.', 403);
-        }
 
         $request->validate([
             'photo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],

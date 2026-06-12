@@ -17,8 +17,6 @@ class FeeStructureController extends Controller
 {
     use ApiResponse;
 
-    private const EDITOR_ROLES = ['school_admin', 'principal', 'super_admin'];
-
     public function __construct(
         private readonly AuditLogger $auditLogger,
     ) {
@@ -103,10 +101,6 @@ class FeeStructureController extends Controller
     public function destroy(Request $request, FeeStructure $feeStructure): JsonResponse
     {
         $user = $request->user();
-
-        if (! in_array($user->role, self::EDITOR_ROLES, true)) {
-            return $this->fail('You do not have permission to delete fee structures.', 403);
-        }
 
         DB::transaction(function () use ($feeStructure, $user, $request) {
             $feeStructure->items()->delete();

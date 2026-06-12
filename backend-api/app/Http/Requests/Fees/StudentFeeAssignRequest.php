@@ -7,15 +7,13 @@ use Illuminate\Validation\Rule;
 
 class StudentFeeAssignRequest extends FormRequest
 {
-    private const EDITOR_ROLES = ['school_admin', 'principal', 'super_admin'];
-
     private const FREQUENCIES = 'in:one_time,monthly,quarterly,half_yearly,annual';
 
     public function authorize(): bool
     {
         $user = $this->user();
 
-        return $user !== null && in_array($user->role, self::EDITOR_ROLES, true);
+        return $user !== null;
     }
 
     /**

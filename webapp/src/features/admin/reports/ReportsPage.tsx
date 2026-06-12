@@ -9,15 +9,14 @@ import OverviewTab from './components/OverviewTab'
 
 type TabKey = 'overview' | 'audit'
 
-const MANAGER_ROLES = ['school_admin', 'principal', 'super_admin']
 const TABS: TabDef<TabKey>[] = [
   { key: 'overview', label: 'Reports', icon: ChartBarIcon },
   { key: 'audit', label: 'Audit Logs', icon: AuditIcon },
 ]
 
 export default function ReportsPage() {
-  const { user } = useAuth()
-  const canManage = !!user && MANAGER_ROLES.includes(user.role)
+  const { can } = useAuth()
+  const canManage = can('reports.view')
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
 
   const sessionsQuery = useQuery({

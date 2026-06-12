@@ -8,7 +8,6 @@ import ClassesTab from './components/ClassesTab'
 import SubjectsTab from './components/SubjectsTab'
 import { fetchAcademicSessions, fetchClasses, fetchSubjects } from './api'
 
-const EDITOR_ROLES = ['school_admin', 'principal', 'super_admin']
 
 type Icon = ComponentType<SVGProps<SVGSVGElement>>
 
@@ -21,8 +20,8 @@ const TABS: { key: TabKey; label: string; icon: Icon }[] = [
 type TabKey = 'sessions' | 'classes' | 'subjects'
 
 export default function AcademicSetupPage() {
-  const { user } = useAuth()
-  const canEdit = !!user && EDITOR_ROLES.includes(user.role)
+  const { can } = useAuth()
+  const canEdit = can('academic.update')
   const [activeTab, setActiveTab] = useState<TabKey>('sessions')
 
   // Lightweight count queries — cache-shared with each tab's own query (same keys).

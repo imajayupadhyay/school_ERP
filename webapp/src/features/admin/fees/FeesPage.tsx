@@ -8,7 +8,6 @@ import StructuresTab from './components/StructuresTab'
 import FeeHeadsTab from './components/FeeHeadsTab'
 import { fetchFeeHeads, fetchFeeStructures } from './api'
 
-const EDITOR_ROLES = ['school_admin', 'principal', 'super_admin']
 
 type Icon = ComponentType<SVGProps<SVGSVGElement>>
 
@@ -21,8 +20,8 @@ const TABS: { key: TabKey; label: string; icon: Icon }[] = [
 type TabKey = 'collections' | 'structures' | 'heads'
 
 export default function FeesPage() {
-  const { user } = useAuth()
-  const canEdit = !!user && EDITOR_ROLES.includes(user.role)
+  const { can } = useAuth()
+  const canEdit = can('fees.update')
   const [activeTab, setActiveTab] = useState<TabKey>('collections')
 
   // Cheap count badges (cache-shared with each tab's own query).

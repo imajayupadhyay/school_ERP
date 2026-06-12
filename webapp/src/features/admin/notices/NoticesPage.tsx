@@ -18,12 +18,11 @@ import NoticeFormModal from './components/NoticeFormModal'
 import type { Notice } from './types'
 import { NOTICE_CATEGORY_LABELS } from './types'
 
-const MANAGER_ROLES = ['school_admin', 'principal', 'super_admin']
 const PER_PAGE = 15
 
 export default function NoticesPage() {
-  const { user } = useAuth()
-  const canManage = !!user && MANAGER_ROLES.includes(user.role)
+  const { can } = useAuth()
+  const canManage = can('notices.create')
   const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')

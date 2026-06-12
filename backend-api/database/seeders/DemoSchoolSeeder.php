@@ -18,6 +18,8 @@ use App\Models\Guardian;
 use App\Models\HomeworkAssignment;
 use App\Models\Notice;
 use App\Models\NoticeRead;
+use App\Models\Permission;
+use App\Models\Role;
 use App\Models\School;
 use App\Models\SchoolClass;
 use App\Models\Section;
@@ -25,6 +27,8 @@ use App\Models\Student;
 use App\Models\StudyMaterial;
 use App\Models\Subject;
 use App\Models\User;
+use App\Models\UserPermission;
+use App\Services\Access\AccessProvisioner;
 use App\Services\ExamResultService;
 use App\Services\Fees\FeeAssignmentService;
 use App\Services\Fees\FeePaymentService;
@@ -123,6 +127,9 @@ class DemoSchoolSeeder extends Seeder
                 ],
             );
         }
+
+        // --- RBAC: system roles + backfill user role_id ---
+        $this->seedAccess($school);
 
         // --- Academic setup used by student management ---
         $currentSession = AcademicSession::updateOrCreate(
@@ -241,6 +248,50 @@ class DemoSchoolSeeder extends Seeder
         $this->seedLearningResources($school, $currentSession);
         $this->seedExams($school, $currentSession);
         $this->seedNotices($school);
+    }
+
+    /**
+     * Seed the school's default system roles, backfill user role_id, and add a
+     * sample per-user permission override so the RBAC UI has data to show.
+     */
+    private function seedAccess(School $school): void
+    {
+        $provisioner = app(AccessProvisioner::class);
+        $provisioner->syncCatalog();
+        $provisioner->provisionSchool($school);
+        $provisioner->backfillUsers($school);
+
+        // Demo override: give one subject teacher extra rights and revoke one,
+        // demonstrating per-individual customization on top of the role.
+        $teacherRole = Role::withoutGlobalScope('school')
+            ->where('school_id', $school->id)->where('slug', 'teacher')->first();
+        $teacher = User::where('school_id', $school->id)
+            ->where('role_id', $teacherRole?->id)
+            ->orderBy('id')
+            ->skip(1)
+            ->first();
+
+        if ($teacher === null) {
+            return;
+        }
+
+        $overrides = [
+            'students.create' => true,  // grant beyond the role
+            'learning.delete' => false, // revoke from the role
+        ];
+
+        foreach ($overrides as $key => $granted) {
+            $permission = Permission::where('key', $key)->first();
+
+            if ($permission === null) {
+                continue;
+            }
+
+            UserPermission::withoutGlobalScope('school')->updateOrCreate(
+                ['user_id' => $teacher->id, 'permission_id' => $permission->id],
+                ['school_id' => $school->id, 'granted' => $granted],
+            );
+        }
     }
 
     /**

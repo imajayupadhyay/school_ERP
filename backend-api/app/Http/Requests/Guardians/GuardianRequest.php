@@ -9,13 +9,11 @@ use Illuminate\Validation\Validator;
 
 class GuardianRequest extends FormRequest
 {
-    private const EDITOR_ROLES = ['school_admin', 'principal', 'super_admin'];
-
     public function authorize(): bool
     {
         $user = $this->user();
 
-        return $user !== null && in_array($user->role, self::EDITOR_ROLES, true);
+        return $user !== null;
     }
 
     /**

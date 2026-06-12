@@ -15,11 +15,13 @@ import {
   ClipboardUserIcon,
   EditIcon,
   FilterIcon,
+  KeyIcon,
   PlusIcon,
   SearchIcon,
   TeachersIcon,
   TrashIcon,
 } from '../components/icons'
+import EmployeeAccessDrawer from '../access/components/EmployeeAccessDrawer'
 import {
   createEmployee,
   deleteEmployee,
@@ -35,7 +37,6 @@ import type {
   EmployeePayload,
 } from './types'
 
-const EDITOR_ROLES = ['school_admin', 'principal', 'super_admin']
 const PER_PAGE = 10
 
 const ROLE_OPTIONS = [
@@ -62,8 +63,11 @@ type AssignmentDraft = {
 }
 
 export default function EmployeePage() {
-  const { user } = useAuth()
-  const canEdit = !!user && EDITOR_ROLES.includes(user.role)
+  const { can } = useAuth()
+  const canEdit = can('employees.update')
+  const canCreate = can('employees.create')
+  const canDelete = can('employees.delete')
+  const canManageAccess = can('access.manage')
   const queryClient = useQueryClient()
 
   const [page, setPage] = useState(1)
@@ -72,6 +76,7 @@ export default function EmployeePage() {
   const [employeeType, setEmployeeType] = useState('')
   const [employeeModal, setEmployeeModal] = useState<Employee | 'new' | null>(null)
   const [assignmentModal, setAssignmentModal] = useState<Employee | null>(null)
+  const [accessUser, setAccessUser] = useState<{ id: number; name: string } | null>(null)
   const [modalError, setModalError] = useState<string | null>(null)
 
   const params: EmployeeListParams = {
@@ -154,7 +159,7 @@ export default function EmployeePage() {
             </div>
           </div>
 
-          {canEdit && (
+          {canCreate && (
             <button
               type="button"
               onClick={() => setEmployeeModal('new')}
@@ -260,7 +265,9 @@ export default function EmployeePage() {
                   <th className="px-4 py-3.5 font-bold">Assignments</th>
                   <th className="px-4 py-3.5 font-bold">Login</th>
                   <th className="px-4 py-3.5 font-bold">Status</th>
-                  {canEdit && <th className="px-5 py-3.5 text-right font-bold">Actions</th>}
+                  {(canEdit || canDelete || canManageAccess) && (
+                    <th className="px-5 py-3.5 text-right font-bold">Actions</th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -269,8 +276,14 @@ export default function EmployeePage() {
                     key={employee.id}
                     employee={employee}
                     canEdit={canEdit}
+                    canDelete={canDelete}
+                    canManageAccess={canManageAccess}
                     onEdit={() => setEmployeeModal(employee)}
                     onAssign={() => setAssignmentModal(employee)}
+                    onAccess={() =>
+                      employee.login.user_id &&
+                      setAccessUser({ id: employee.login.user_id, name: employee.full_name })
+                    }
                     onDelete={() => {
                       if (window.confirm(`Delete ${employee.full_name}? Their login will be deactivated.`)) {
                         deleteMutation.mutate(employee.id)
@@ -316,6 +329,14 @@ export default function EmployeePage() {
         </>
       )}
 
+      {accessUser && (
+        <EmployeeAccessDrawer
+          userId={accessUser.id}
+          userName={accessUser.name}
+          onClose={() => setAccessUser(null)}
+        />
+      )}
+
       {employeeModal && (
         <EmployeeFormModal
           employee={employeeModal === 'new' ? null : employeeModal}
@@ -350,17 +371,24 @@ export default function EmployeePage() {
 function EmployeeRow({
   employee,
   canEdit,
+  canDelete,
+  canManageAccess,
   onEdit,
   onAssign,
+  onAccess,
   onDelete,
 }: {
   employee: Employee
   canEdit: boolean
+  canDelete: boolean
+  canManageAccess: boolean
   onEdit: () => void
   onAssign: () => void
+  onAccess: () => void
   onDelete: () => void
 }) {
   const teaching = employee.employee_type === 'teaching'
+  const showActions = canEdit || canDelete || canManageAccess
   return (
     <tr className="group border-b border-line/60 transition-colors last:border-0 hover:bg-accent/[0.035]">
       <td className="px-5 py-3">
@@ -404,18 +432,29 @@ function EmployeeRow({
       <td className="px-4 py-3">
         <StatusBadge status={employee.status} />
       </td>
-      {canEdit && (
+      {showActions && (
         <td className="px-5 py-3">
           <div className="flex items-center justify-end gap-1 opacity-80 transition-opacity group-hover:opacity-100">
-            <RowAction label="Assignments" onClick={onAssign}>
-              <ClipboardUserIcon width={17} height={17} />
-            </RowAction>
-            <RowAction label="Edit" onClick={onEdit}>
-              <EditIcon width={17} height={17} />
-            </RowAction>
-            <RowAction label="Delete" onClick={onDelete} danger>
-              <TrashIcon width={17} height={17} />
-            </RowAction>
+            {canManageAccess && employee.login.has_login && (
+              <RowAction label="Access & permissions" tone="gold" onClick={onAccess}>
+                <KeyIcon width={17} height={17} />
+              </RowAction>
+            )}
+            {canEdit && (
+              <RowAction label="Assignments" onClick={onAssign}>
+                <ClipboardUserIcon width={17} height={17} />
+              </RowAction>
+            )}
+            {canEdit && (
+              <RowAction label="Edit" onClick={onEdit}>
+                <EditIcon width={17} height={17} />
+              </RowAction>
+            )}
+            {canDelete && (
+              <RowAction label="Delete" onClick={onDelete} danger>
+                <TrashIcon width={17} height={17} />
+              </RowAction>
+            )}
           </div>
         </td>
       )}

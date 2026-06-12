@@ -17,8 +17,6 @@ class FeePaymentController extends Controller
 {
     use ApiResponse;
 
-    private const EDITOR_ROLES = ['school_admin', 'principal', 'super_admin'];
-
     public function __construct(
         private readonly AuditLogger $auditLogger,
         private readonly FeePaymentService $paymentService,
@@ -93,10 +91,6 @@ class FeePaymentController extends Controller
     public function void(Request $request, FeePayment $feePayment): JsonResponse
     {
         $user = $request->user();
-
-        if (! in_array($user->role, self::EDITOR_ROLES, true)) {
-            return $this->fail('You do not have permission to void payments.', 403);
-        }
 
         if ($feePayment->status === 'cancelled') {
             return $this->fail('This payment is already cancelled.', 422);

@@ -136,12 +136,14 @@ class EmployeeTest extends TestCase
         $response->assertJsonValidationErrors(['employee_code', 'email']);
     }
 
-    public function test_teacher_can_view_but_not_create_employee(): void
+    public function test_teacher_cannot_access_employee_module(): void
     {
+        // Teachers & Staff is a management module; teachers lack employees.* and
+        // are blocked from both reading and writing it under RBAC.
         $school = $this->makeSchool();
         $teacher = $this->makeUser($school, 'teacher');
 
-        $this->actingAs($teacher)->getJson('/api/v1/employees')->assertOk();
+        $this->actingAs($teacher)->getJson('/api/v1/employees')->assertStatus(403);
 
         $this->actingAs($teacher)->postJson('/api/v1/employees', $this->employeePayload())
             ->assertStatus(403);

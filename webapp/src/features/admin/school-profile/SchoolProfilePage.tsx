@@ -11,7 +11,6 @@ import { SettingsIcon } from '../components/icons'
 import { PageHeader } from '../components/PageHeader'
 import LogoUploader from './components/LogoUploader'
 
-const EDITOR_ROLES = ['school_admin', 'principal', 'super_admin']
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -28,9 +27,9 @@ const DATE_FORMAT_OPTIONS = [
 ]
 
 export default function SchoolProfilePage() {
-  const { user } = useAuth()
+  const { can } = useAuth()
   const queryClient = useQueryClient()
-  const canEdit = !!user && EDITOR_ROLES.includes(user.role)
+  const canEdit = can('settings.update')
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['school-profile'],

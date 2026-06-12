@@ -20,8 +20,6 @@ class GuardianController extends Controller
 {
     use ApiResponse;
 
-    private const EDITOR_ROLES = ['school_admin', 'principal', 'super_admin'];
-
     public function __construct(
         private readonly AuditLogger $auditLogger,
         private readonly GuardianService $guardianService,
@@ -30,12 +28,6 @@ class GuardianController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $permission = $this->ensureEditor($request);
-
-        if ($permission !== null) {
-            return $permission;
-        }
-
         $perPage = min(max((int) $request->integer('per_page', 15), 5), 50);
         $search = trim((string) $request->query('search', ''));
 
@@ -113,12 +105,6 @@ class GuardianController extends Controller
 
     public function show(Request $request, Guardian $guardian): JsonResponse
     {
-        $permission = $this->ensureEditor($request);
-
-        if ($permission !== null) {
-            return $permission;
-        }
-
         return $this->ok(new GuardianResource($guardian->load(['user', 'students'])));
     }
 
@@ -176,12 +162,6 @@ class GuardianController extends Controller
 
     public function destroy(Request $request, Guardian $guardian): JsonResponse
     {
-        $permission = $this->ensureEditor($request);
-
-        if ($permission !== null) {
-            return $permission;
-        }
-
         $guardian->load('user');
         $original = [
             'status' => $guardian->status,
@@ -274,16 +254,5 @@ class GuardianController extends Controller
         );
 
         return $this->ok(new GuardianResource($guardian->fresh(['user', 'students'])), 'Guardian portal password reset.');
-    }
-
-    private function ensureEditor(Request $request): ?JsonResponse
-    {
-        $user = $request->user();
-
-        if (! in_array($user->role, self::EDITOR_ROLES, true)) {
-            return $this->fail('You do not have permission to manage guardians.', 403);
-        }
-
-        return null;
     }
 }

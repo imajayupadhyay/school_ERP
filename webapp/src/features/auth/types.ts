@@ -15,6 +15,11 @@ export interface User {
   email: string
   phone: string | null
   role: string
+  role_id: number | null
+  role_label: string
+  is_owner: boolean
+  /** Effective permission keys, or ['*'] for owners/super admins. */
+  permissions: string[]
   status: string
   school_id: number | null
   school: School | null

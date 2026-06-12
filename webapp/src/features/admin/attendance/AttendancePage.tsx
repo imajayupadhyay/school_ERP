@@ -11,7 +11,6 @@ import ReportsTab from './components/ReportsTab'
 import { todayInputValue } from './utils'
 import type { AttendanceSession } from './types'
 
-const MARKER_ROLES = ['school_admin', 'principal', 'super_admin', 'teacher']
 
 type Icon = ComponentType<SVGProps<SVGSVGElement>>
 
@@ -31,8 +30,8 @@ export interface AttendanceFilters {
 }
 
 export default function AttendancePage() {
-  const { user } = useAuth()
-  const canMark = !!user && MARKER_ROLES.includes(user.role)
+  const { can } = useAuth()
+  const canMark = can('attendance.create')
   const [activeTab, setActiveTab] = useState<TabKey>('mark')
   const [filters, setFilters] = useState<AttendanceFilters>({
     academicSessionId: '',

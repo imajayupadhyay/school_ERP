@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import type { ComponentType, SVGProps } from 'react'
+import { useAuth } from '@/features/auth/AuthContext'
 import {
   DashboardIcon,
   StudentsIcon,
@@ -13,6 +14,7 @@ import {
   NoticesIcon,
   ReportsIcon,
   SettingsIcon,
+  ShieldIcon,
   CloseIcon,
   ChevronsLeftIcon,
 } from './icons'
@@ -23,23 +25,28 @@ interface NavItem {
   label: string
   icon: Icon
   to?: string // present => navigable; absent => not built yet
+  /** Permission key required to see this item (owners bypass). */
+  permission?: string
 }
 
 const primaryNav: NavItem[] = [
-  { label: 'Dashboard', icon: DashboardIcon, to: '/admin' },
-  { label: 'Students', icon: StudentsIcon, to: '/admin/students' },
-  { label: 'Parents & Guardians', icon: ParentsIcon, to: '/admin/guardians' },
-  { label: 'Teachers & Staff', icon: TeachersIcon, to: '/admin/employees' },
-  { label: 'Classes', icon: ClassesIcon, to: '/admin/academic-setup' },
-  { label: 'Attendance', icon: AttendanceIcon, to: '/admin/attendance' },
-  { label: 'Fees', icon: FeesIcon, to: '/admin/fees' },
-  { label: 'Exams & Results', icon: ExamsIcon, to: '/admin/exams' },
-  { label: 'Homework & Materials', icon: HomeworkIcon, to: '/admin/learning' },
-  { label: 'Notices', icon: NoticesIcon, to: '/admin/notices' },
-  { label: 'Reports & Audit Logs', icon: ReportsIcon, to: '/admin/reports' },
+  { label: 'Dashboard', icon: DashboardIcon, to: '/admin', permission: 'dashboard.view' },
+  { label: 'Students', icon: StudentsIcon, to: '/admin/students', permission: 'students.view' },
+  { label: 'Parents & Guardians', icon: ParentsIcon, to: '/admin/guardians', permission: 'guardians.view' },
+  { label: 'Teachers & Staff', icon: TeachersIcon, to: '/admin/employees', permission: 'employees.view' },
+  { label: 'Classes', icon: ClassesIcon, to: '/admin/academic-setup', permission: 'academic.view' },
+  { label: 'Attendance', icon: AttendanceIcon, to: '/admin/attendance', permission: 'attendance.view' },
+  { label: 'Fees', icon: FeesIcon, to: '/admin/fees', permission: 'fees.view' },
+  { label: 'Exams & Results', icon: ExamsIcon, to: '/admin/exams', permission: 'exams.view' },
+  { label: 'Homework & Materials', icon: HomeworkIcon, to: '/admin/learning', permission: 'learning.view' },
+  { label: 'Notices', icon: NoticesIcon, to: '/admin/notices', permission: 'notices.view' },
+  { label: 'Reports & Audit Logs', icon: ReportsIcon, to: '/admin/reports', permission: 'reports.view' },
 ]
 
-const secondaryNav: NavItem[] = [{ label: 'Settings', icon: SettingsIcon, to: '/admin/settings' }]
+const secondaryNav: NavItem[] = [
+  { label: 'Roles & Permissions', icon: ShieldIcon, to: '/admin/roles', permission: 'access.view' },
+  { label: 'Settings', icon: SettingsIcon, to: '/admin/settings', permission: 'settings.view' },
+]
 
 interface SidebarProps {
   /** Desktop icon-rail mode (lg+). */
@@ -56,6 +63,11 @@ export default function Sidebar({
   onCloseMobile,
   onToggleCollapse,
 }: SidebarProps) {
+  const { can } = useAuth()
+  const visible = (item: NavItem) => !item.permission || can(item.permission)
+  const primaryItems = primaryNav.filter(visible)
+  const secondaryItems = secondaryNav.filter(visible)
+
   return (
     <>
       {/* Mobile backdrop */}
@@ -102,23 +114,27 @@ export default function Sidebar({
         <nav className="flex-1 overflow-y-auto px-3 py-5">
           <GroupLabel collapsed={collapsed}>Main</GroupLabel>
           <ul className="space-y-1">
-            {primaryNav.map((item) => (
+            {primaryItems.map((item) => (
               <li key={item.label}>
                 <NavItemLink item={item} collapsed={collapsed} onNavigate={onCloseMobile} />
               </li>
             ))}
           </ul>
 
-          <GroupLabel collapsed={collapsed} className="pt-6">
-            System
-          </GroupLabel>
-          <ul className="space-y-1">
-            {secondaryNav.map((item) => (
-              <li key={item.label}>
-                <NavItemLink item={item} collapsed={collapsed} onNavigate={onCloseMobile} />
-              </li>
-            ))}
-          </ul>
+          {secondaryItems.length > 0 && (
+            <>
+              <GroupLabel collapsed={collapsed} className="pt-6">
+                System
+              </GroupLabel>
+              <ul className="space-y-1">
+                {secondaryItems.map((item) => (
+                  <li key={item.label}>
+                    <NavItemLink item={item} collapsed={collapsed} onNavigate={onCloseMobile} />
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </nav>
 
         {/* Collapse toggle (desktop only) */}

@@ -19,8 +19,6 @@ class EmployeeController extends Controller
 {
     use ApiResponse;
 
-    private const EDITOR_ROLES = ['school_admin', 'principal', 'super_admin'];
-
     private const EMPLOYEE_FIELDS = [
         'school_id',
         'user_id',
@@ -186,10 +184,6 @@ class EmployeeController extends Controller
     public function destroy(Request $request, Employee $employee): JsonResponse
     {
         $user = $request->user();
-
-        if (! in_array($user->role, self::EDITOR_ROLES, true)) {
-            return $this->fail('You do not have permission to delete employees.', 403);
-        }
 
         DB::transaction(function () use ($request, $employee, $user) {
             $employee->load('user');
