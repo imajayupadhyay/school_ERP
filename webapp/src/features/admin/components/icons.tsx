@@ -81,6 +81,18 @@ export const HomeworkIcon = (p: IconProps) => (
   </svg>
 )
 
+export const ReportsIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M4 3h16a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm2 13h3V9H6v7Zm5 0h3V6h-3v10Zm5 0h3v-5h-3v5Z" />
+  </svg>
+)
+
+export const AuditIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M12 2 4 5v6c0 5.1 3.44 9.74 8 11 4.56-1.26 8-5.9 8-11V5l-8-3Zm-1 5h2v5h-2V7Zm0 7h2v2h-2v-2Z" />
+  </svg>
+)
+
 export const SettingsIcon = (p: IconProps) => (
   <svg {...base(p)}>
     <path d="M19.14 12.94a7.78 7.78 0 0 0 0-1.88l2-1.55-2-3.46-2.4 1a7.6 7.6 0 0 0-1.62-.94L14.7 2.5h-3.4l-.42 2.61c-.57.23-1.12.54-1.62.94l-2.4-1-2 3.46 2 1.55a7.78 7.78 0 0 0 0 1.88l-2 1.55 2 3.46 2.4-1c.5.4 1.05.71 1.62.94l.42 2.61h3.4l.42-2.61c.57-.23 1.12-.54 1.62-.94l2.4 1 2-3.46-2-1.55ZM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z" />

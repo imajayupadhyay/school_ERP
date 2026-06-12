@@ -131,16 +131,26 @@ Completed:
   - `DemoSchoolSeeder` creates four notices (event, urgent alert, exam meeting, scheduled holiday), five audience targets, and sample reads. Verified seed: 4 notices, 5 targets, 4 reads; 3 currently published and 1 scheduled.
   - Backend feature tests in `tests/Feature/Notices/NoticeManagementTest.php` (8 tests covering normalized targets/audit, validation, teacher assignment visibility, automatic scheduling, parent/student targeting, role restrictions, attachment/read/delivery tracking, and tenant isolation). Full suite: 104/104 passing with 452 assertions.
   - Verified with all three MySQL migrations, authenticated API smoke testing, targeted ESLint, and `npm run build` in `webapp/` (215 modules, no TypeScript errors; Vite still reports the existing large chunk-size warning).
+- Reports & Audit Logs module (Phase 3, item 12):
+  - `AuditLog` now uses the mandatory `BelongsToSchool` global scope so audit records are tenant-scoped by default.
+  - Backend API added under `/api/v1/reports`: `GET /reports/overview`, `GET /reports/audit-logs`, and `GET /reports/audit-logs/summary`.
+  - Access is restricted to `school_admin`, `principal`, and `super_admin`; teachers and other roles receive 403. All endpoints require the authenticated user to belong to a school.
+  - Report overview supports date range, academic session, class, and section filters. It returns student counts/new admissions, employee counts/new joiners, fee billed/collected/outstanding/overdue, attendance rate, published result pass rate, homework/material/notice counts, audit-event counts, class-wise fee/attendance/result tables, and a recent audit activity trend.
+  - Audit logs support search, module filter, exact action filter, actor filter, date range, pagination, module summary, top actors, and recent events. Responses include actor, auditable target, changed fields, change count, full recorded changes, IP address, and timestamp.
+  - Web: `/admin/reports` — Reports & Audit Logs sidebar item enabled. Page uses the admin design system with `PageHeader`, `SegmentedTabs`, filter toolbar, KPI cards, class-level report tables, activity bars, audit log table, pagination, and a detail modal showing before/after field changes.
+  - Backend feature tests in `tests/Feature/Reports/ReportAndAuditLogTest.php` (3 tests covering overview aggregates without tenant leakage, filterable/scoped audit logs and summary, and teacher 403 access). Full suite: 109/109 passing with 529 assertions.
+  - Verified with `npm run build` in `webapp/` (227 modules, no TypeScript errors; Vite still reports the existing large chunk-size warning).
 
 Not Started:
 
 - Full RBAC (permission tables / action-level permissions) — currently a single `role` string per user; intentionally deferred to the end of the School Admin module sequence per current direction.
-- School Admin CRUD module still remaining: Reports & Audit Logs.
+- School Admin module still remaining: Role and permission management / full RBAC.
 - Notices follow-ups: SMS/email/WhatsApp/push channel providers, delivery provider webhooks/statuses, reusable notification templates, and two-way parent-teacher messaging/meeting requests.
 - Fees module follow-ups (out of scope this round): printable PDF receipts, fee reminders/notifications, late-fee fines, online payment gateway, bulk invoice regeneration, and a dedicated Accountant role (collection currently gated to school_admin/principal/super_admin until full RBAC lands).
+- Reports follow-ups: CSV/PDF exports, scheduled report emails, saved report presets, and deeper module-specific report drilldowns.
 - Platform Super Admin web panel.
 - Student, Parent, and Teacher/Employee portals.
-- Audit log viewing/reporting and broader file upload workflows.
+- Broader file upload workflows.
 - Android and iOS apps.
 
 ## Main Build Direction
@@ -476,8 +486,7 @@ Example path pattern:
 
 ## Current Immediate Next Steps
 
-1. Configure Laravel API routing under `/api/v1`.
-2. Configure MySQL connection and create the local database.
-3. Create database design document for tenancy and core modules.
-4. Create authentication and role/permission plan.
-5. Start School Admin backend foundation and web shell together.
+1. Build full Role and Permission Management / RBAC for the School Admin panel.
+2. Replace broad role checks with module/action permissions across backend APIs and frontend navigation.
+3. Add permission-aware report export controls after RBAC is in place.
+4. Start Platform Super Admin planning after School Admin RBAC is complete.

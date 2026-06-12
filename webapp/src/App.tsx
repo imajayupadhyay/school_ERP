@@ -14,6 +14,7 @@ import AttendancePage from '@/features/admin/attendance/AttendancePage'
 import LearningPage from '@/features/admin/learning/LearningPage'
 import ExamsPage from '@/features/admin/exams/ExamsPage'
 import NoticesPage from '@/features/admin/notices/NoticesPage'
+import ReportsPage from '@/features/admin/reports/ReportsPage'
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
           <Route path="learning" element={<LearningPage />} />
           <Route path="exams" element={<ExamsPage />} />
           <Route path="notices" element={<NoticesPage />} />
+          <Route path="reports" element={<ReportsPage />} />
         </Route>
       </Route>
 

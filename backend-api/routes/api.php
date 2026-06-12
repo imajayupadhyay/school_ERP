@@ -21,6 +21,8 @@ use App\Http\Controllers\Api\V1\Guardians\GuardianController;
 use App\Http\Controllers\Api\V1\Learning\HomeworkAssignmentController;
 use App\Http\Controllers\Api\V1\Learning\StudyMaterialController;
 use App\Http\Controllers\Api\V1\Notices\NoticeController;
+use App\Http\Controllers\Api\V1\Reports\AuditLogController;
+use App\Http\Controllers\Api\V1\Reports\ReportController;
 use App\Http\Controllers\Api\V1\SchoolProfileController;
 use App\Http\Controllers\Api\V1\Students\StudentController;
 use Illuminate\Support\Facades\Route;
@@ -42,6 +44,9 @@ Route::prefix('v1')->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout']);
 
         Route::get('/dashboard', [DashboardController::class, 'index']);
+        Route::get('/reports/overview', [ReportController::class, 'overview']);
+        Route::get('/reports/audit-logs', [AuditLogController::class, 'index']);
+        Route::get('/reports/audit-logs/summary', [AuditLogController::class, 'summary']);
 
         Route::get('/school-profile', [SchoolProfileController::class, 'show']);
         Route::put('/school-profile', [SchoolProfileController::class, 'update']);
