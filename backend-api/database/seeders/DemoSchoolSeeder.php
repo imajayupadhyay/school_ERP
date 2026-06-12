@@ -12,10 +12,12 @@ use App\Models\FeeInvoice;
 use App\Models\FeeStructure;
 use App\Models\FeeStructureItem;
 use App\Models\Guardian;
+use App\Models\HomeworkAssignment;
 use App\Models\School;
 use App\Models\SchoolClass;
 use App\Models\Section;
 use App\Models\Student;
+use App\Models\StudyMaterial;
 use App\Models\Subject;
 use App\Models\User;
 use App\Services\Fees\FeeAssignmentService;
@@ -183,6 +185,7 @@ class DemoSchoolSeeder extends Seeder
             $this->seedGuardians($school);
             $this->seedFees($school, $currentSession, $classModels);
             $this->seedAttendance($school, $currentSession);
+            $this->seedLearningResources($school, $currentSession);
 
             return;
         }
@@ -226,6 +229,7 @@ class DemoSchoolSeeder extends Seeder
         $this->seedGuardians($school);
         $this->seedFees($school, $currentSession, $classModels);
         $this->seedAttendance($school, $currentSession);
+        $this->seedLearningResources($school, $currentSession);
     }
 
     /**
@@ -504,6 +508,83 @@ class DemoSchoolSeeder extends Seeder
                         ]);
                     });
             }
+        }
+    }
+
+    private function seedLearningResources(School $school, AcademicSession $session): void
+    {
+        if (HomeworkAssignment::where('school_id', $school->id)->exists()
+            || StudyMaterial::where('school_id', $school->id)->exists()) {
+            return;
+        }
+
+        $creator = User::where('school_id', $school->id)->whereIn('role', ['teacher', 'principal', 'school_admin'])->first();
+
+        if ($creator === null) {
+            return;
+        }
+
+        $classes = SchoolClass::where('school_id', $school->id)
+            ->with(['sections', 'subjects'])
+            ->orderBy('sequence')
+            ->limit(4)
+            ->get();
+
+        foreach ($classes as $index => $class) {
+            $section = $class->sections->first();
+            $subject = $class->subjects->first();
+            $subjectName = $subject?->name ?? 'General';
+
+            HomeworkAssignment::create([
+                'school_id' => $school->id,
+                'academic_session_id' => $session->id,
+                'class_id' => $class->id,
+                'section_id' => $section?->id,
+                'subject_id' => $subject?->id,
+                'created_by' => $creator->id,
+                'title' => "{$class->name} {$subjectName} Practice Set",
+                'instructions' => 'Complete the assigned questions in your notebook and be ready for discussion in the next class.',
+                'assigned_date' => Carbon::now()->subDays($index + 1)->toDateString(),
+                'due_date' => Carbon::now()->addDays(3 + $index)->toDateString(),
+                'submission_required' => true,
+                'status' => 'published',
+                'published_at' => Carbon::now()->subDays($index + 1),
+            ]);
+
+            StudyMaterial::create([
+                'school_id' => $school->id,
+                'academic_session_id' => $session->id,
+                'class_id' => $class->id,
+                'section_id' => null,
+                'subject_id' => $subject?->id,
+                'created_by' => $creator->id,
+                'title' => "{$class->name} {$subjectName} Revision Notes",
+                'description' => 'Teacher-curated revision points for the current chapter.',
+                'material_type' => 'note',
+                'content_url' => null,
+                'status' => 'published',
+                'published_at' => Carbon::now()->subDays($index + 2),
+            ]);
+        }
+
+        $class = $classes->first();
+        $subject = $class?->subjects->first();
+
+        if ($class !== null) {
+            StudyMaterial::create([
+                'school_id' => $school->id,
+                'academic_session_id' => $session->id,
+                'class_id' => $class->id,
+                'section_id' => null,
+                'subject_id' => $subject?->id,
+                'created_by' => $creator->id,
+                'title' => 'Foundational Learning Video',
+                'description' => 'A sample video link for students to review at home.',
+                'material_type' => 'video',
+                'content_url' => 'https://example.com/demo-learning-video',
+                'status' => 'published',
+                'published_at' => Carbon::now()->subDays(1),
+            ]);
         }
     }
 }

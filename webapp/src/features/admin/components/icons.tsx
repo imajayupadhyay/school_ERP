@@ -75,6 +75,12 @@ export const NoticesIcon = (p: IconProps) => (
   </svg>
 )
 
+export const HomeworkIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M5 3h11.5L21 7.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm10 1.5V9h4.5L15 4.5ZM7 11h10V9H7v2Zm0 4h10v-2H7v2Zm0 4h6v-2H7v2Z" />
+  </svg>
+)
+
 export const SettingsIcon = (p: IconProps) => (
   <svg {...base(p)}>
     <path d="M19.14 12.94a7.78 7.78 0 0 0 0-1.88l2-1.55-2-3.46-2.4 1a7.6 7.6 0 0 0-1.62-.94L14.7 2.5h-3.4l-.42 2.61c-.57.23-1.12.54-1.62.94l-2.4-1-2 3.46 2 1.55a7.78 7.78 0 0 0 0 1.88l-2 1.55 2 3.46 2.4-1c.5.4 1.05.71 1.62.94l.42 2.61h3.4l.42-2.61c.57-.23 1.12-.54 1.62-.94l2.4 1 2-3.46-2-1.55ZM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z" />

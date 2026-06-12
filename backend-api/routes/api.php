@@ -14,6 +14,8 @@ use App\Http\Controllers\Api\V1\Fees\FeePaymentController;
 use App\Http\Controllers\Api\V1\Fees\FeeStructureController;
 use App\Http\Controllers\Api\V1\Fees\StudentFeeController;
 use App\Http\Controllers\Api\V1\Guardians\GuardianController;
+use App\Http\Controllers\Api\V1\Learning\HomeworkAssignmentController;
+use App\Http\Controllers\Api\V1\Learning\StudyMaterialController;
 use App\Http\Controllers\Api\V1\SchoolProfileController;
 use App\Http\Controllers\Api\V1\Students\StudentController;
 use Illuminate\Support\Facades\Route;
@@ -85,6 +87,20 @@ Route::prefix('v1')->group(function () {
         Route::post('/attendance/sessions', [AttendanceController::class, 'store']);
         Route::get('/attendance/reports/summary', [AttendanceController::class, 'summary']);
         Route::get('/attendance/sessions/{attendanceSession}', [AttendanceController::class, 'show']);
+
+        Route::get('/homework', [HomeworkAssignmentController::class, 'index']);
+        Route::post('/homework', [HomeworkAssignmentController::class, 'store']);
+        Route::get('/homework/{homeworkAssignment}', [HomeworkAssignmentController::class, 'show']);
+        Route::put('/homework/{homeworkAssignment}', [HomeworkAssignmentController::class, 'update']);
+        Route::delete('/homework/{homeworkAssignment}', [HomeworkAssignmentController::class, 'destroy']);
+        Route::post('/homework/{homeworkAssignment}/attachment', [HomeworkAssignmentController::class, 'uploadAttachment']);
+
+        Route::get('/study-materials', [StudyMaterialController::class, 'index']);
+        Route::post('/study-materials', [StudyMaterialController::class, 'store']);
+        Route::get('/study-materials/{studyMaterial}', [StudyMaterialController::class, 'show']);
+        Route::put('/study-materials/{studyMaterial}', [StudyMaterialController::class, 'update']);
+        Route::delete('/study-materials/{studyMaterial}', [StudyMaterialController::class, 'destroy']);
+        Route::post('/study-materials/{studyMaterial}/attachment', [StudyMaterialController::class, 'uploadAttachment']);
 
         Route::get('/guardians', [GuardianController::class, 'index']);
         Route::post('/guardians', [GuardianController::class, 'store']);

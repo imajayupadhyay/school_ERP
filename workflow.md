@@ -99,11 +99,21 @@ Completed:
   - `DemoSchoolSeeder` now creates class-teacher assignments and recent demo attendance sessions/records.
   - Backend feature tests in `tests/Feature/Attendance/AttendanceManagementTest.php` (6 tests covering roster load, marking, update without duplicate session, assigned teacher access, unassigned teacher 403, roster validation, tenant-scoped summary). Full suite: 81/81 passing.
   - Verified with `npm run build` in `webapp/` (199 modules, no TS errors; Vite still reports the existing large chunk-size warning after admin screens).
+- Homework & Study Material module (Phase 3, item 10):
+  - New tenant-scoped tables: `homework_assignments` (session/class/section/subject, title, instructions, assigned/due dates, submission flag, optional attachment, draft/published/archived status) and `study_materials` (session/class/section/subject, title, description, material type document/video/link/note/worksheet, optional URL/file, status). Both use `BelongsToSchool`.
+  - Models: `HomeworkAssignment` and `StudyMaterial`; `LearningService` centralizes teacher assignment-aware access checks, visible query scoping, and publish timestamp handling.
+  - API: `GET/POST/GET one/PUT/DELETE /api/v1/homework`, `POST /homework/{id}/attachment`; `GET/POST/GET one/PUT/DELETE /api/v1/study-materials`, `POST /study-materials/{id}/attachment`.
+  - Validation enforces same-school academic session/class/section/subject references, section-belongs-to-class checks, subject mapped to selected class, due date after assigned date, and required URLs for video/link materials.
+  - Access: school_admin/principal/super_admin can manage all homework/materials; teachers can create/update/archive only for assigned class/section/subject scopes through `employee_assignments`; other roles see no records until student/parent portals define their read contracts.
+  - Web: `/admin/learning` — Sidebar item "Homework & Materials" enabled; tabs for Homework and Study Materials with search, class/section/subject/status/type filters, pagination, create/edit/archive modals, attachment upload, and direct file/link actions.
+  - `DemoSchoolSeeder` now creates sample published homework and study materials for demo classes.
+  - Backend feature tests in `tests/Feature/Learning/LearningManagementTest.php` (7 tests covering homework create/upload, teacher scope restrictions, validation, tenant/teacher scoped listing, study material create/update/archive, URL requirement, file upload). Full suite: 88/88 passing.
+  - Verified with `npm run build` in `webapp/` (204 modules, no TS errors; Vite still reports the existing large chunk-size warning after admin screens).
 
 Not Started:
 
 - Full RBAC (permission tables / action-level permissions) — currently a single `role` string per user; intentionally deferred to the end of the School Admin module sequence per current direction.
-- School Admin CRUD modules still remaining: Exams/Results, Homework/Study Material, Notices/Communication, Reports.
+- School Admin CRUD modules still remaining: Exams/Results, Notices/Communication, Reports.
 - Fees module follow-ups (out of scope this round): printable PDF receipts, fee reminders/notifications, late-fee fines, online payment gateway, bulk invoice regeneration, and a dedicated Accountant role (collection currently gated to school_admin/principal/super_admin until full RBAC lands).
 - Platform Super Admin web panel.
 - Student, Parent, and Teacher/Employee portals.

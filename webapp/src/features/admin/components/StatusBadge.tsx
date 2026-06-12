@@ -21,6 +21,7 @@ const STATUS_STYLES: Record<string, string> = {
   excused: 'bg-ink/8 text-ink/55',
   draft: 'bg-ink/8 text-ink/55',
   submitted: 'bg-[#168a66]/10 text-[#168a66]',
+  published: 'bg-[#168a66]/10 text-[#168a66]',
 }
 
 export default function StatusBadge({ status }: { status: string }) {

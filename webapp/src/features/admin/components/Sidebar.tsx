@@ -9,6 +9,7 @@ import {
   AttendanceIcon,
   FeesIcon,
   ExamsIcon,
+  HomeworkIcon,
   NoticesIcon,
   SettingsIcon,
   CloseIcon,
@@ -31,6 +32,7 @@ const primaryNav: NavItem[] = [
   { label: 'Attendance', icon: AttendanceIcon, to: '/admin/attendance' },
   { label: 'Fees', icon: FeesIcon, to: '/admin/fees' },
   { label: 'Exams & Results', icon: ExamsIcon },
+  { label: 'Homework & Materials', icon: HomeworkIcon, to: '/admin/learning' },
   { label: 'Notices', icon: NoticesIcon },
 ]
 
