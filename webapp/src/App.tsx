@@ -10,6 +10,7 @@ import EmployeePage from '@/features/admin/employees/EmployeePage'
 import StudentPage from '@/features/admin/students/StudentPage'
 import GuardianPage from '@/features/admin/guardians/GuardianPage'
 import FeesPage from '@/features/admin/fees/FeesPage'
+import AttendancePage from '@/features/admin/attendance/AttendancePage'
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
           <Route path="employees" element={<EmployeePage />} />
           <Route path="students" element={<StudentPage />} />
           <Route path="guardians" element={<GuardianPage />} />
+          <Route path="attendance" element={<AttendancePage />} />
           <Route path="fees" element={<FeesPage />} />
         </Route>
       </Route>

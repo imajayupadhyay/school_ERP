@@ -28,7 +28,7 @@ const primaryNav: NavItem[] = [
   { label: 'Parents & Guardians', icon: ParentsIcon, to: '/admin/guardians' },
   { label: 'Teachers & Staff', icon: TeachersIcon, to: '/admin/employees' },
   { label: 'Classes', icon: ClassesIcon, to: '/admin/academic-setup' },
-  { label: 'Attendance', icon: AttendanceIcon },
+  { label: 'Attendance', icon: AttendanceIcon, to: '/admin/attendance' },
   { label: 'Fees', icon: FeesIcon, to: '/admin/fees' },
   { label: 'Exams & Results', icon: ExamsIcon },
   { label: 'Notices', icon: NoticesIcon },

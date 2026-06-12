@@ -116,6 +116,12 @@ class Student extends Model
         return $this->hasMany(FeeInvoice::class);
     }
 
+    /** @return HasMany<AttendanceRecord, $this> */
+    public function attendanceRecords(): HasMany
+    {
+        return $this->hasMany(AttendanceRecord::class);
+    }
+
     public function getFullNameAttribute(): string
     {
         return trim(collect([$this->first_name, $this->middle_name, $this->last_name])

@@ -6,7 +6,7 @@ This file is the project memory for the SchoolLID ERP build. Every AI agent and 
 
 ## Current Project State
 
-Status as of: 2026-06-11
+Status as of: 2026-06-12
 
 Completed:
 
@@ -89,11 +89,21 @@ Completed:
   - `DemoSchoolSeeder` extended: 6 fee heads, a structure per class, 24 assigned plans (every 5th student gets a 10% sibling concession), generated invoices, and sample full/partial payments. Fresh seed yields 288 invoices / 48 payments with mixed paid/partial/pending statuses.
   - Backend feature tests in `tests/Feature/Fees/FeeManagementTest.php` (21 tests: fee-head/structure CRUD + uniqueness + role checks, instalment counts per frequency, optional-item exclusion, discount math, custom lines, reassignment, partial/full payment + sequential receipts, overpayment rejection, payment void, payment-safe editing — preserves paid invoices / rebuilds unpaid / anchors mid-year one-offs / never double-bills a paid one-off / turns an optional fee on for a student, tenant isolation). Full suite: 75/75 passing.
   - Verified end-to-end with curl against the demo school (login → roster aggregates → student plan → partial payment → overpayment 422 → teacher 403 on writes / 200 read → edit plan to add an optional + custom fee and confirm invoices regenerate) and `npm run build` in `webapp/` (193 modules, no TS errors).
+- Attendance Management module (Phase 3, item 8):
+  - New tenant-scoped tables: `attendance_sessions` (one daily class/section roster per academic session/date, marked user, draft/submitted status, remarks) and `attendance_records` (one row per student with present/absent/late/half_day/excused status and remarks). Both use `BelongsToSchool`.
+  - Models: `AttendanceSession` and `AttendanceRecord`; `Student` now has `attendanceRecords()`.
+  - API: `GET /api/v1/attendance/roster`, `POST /attendance/sessions`, `GET /attendance/sessions`, `GET /attendance/sessions/{id}`, and `GET /attendance/reports/summary`.
+  - Validation enforces same-school academic session/class/section/student references, section-belongs-to-class checks, active-student roster membership, date inside the academic session, and teacher assignment access.
+  - Access: school_admin/principal/super_admin can manage all rosters; teachers can view/mark only class/section rosters assigned through `employee_assignments`; other roles are blocked from marking.
+  - Web: `/admin/attendance` — Attendance sidebar item enabled; tabs for Mark Attendance, Sessions, and Reports. Marking supports session/class/section/date filters, roster loading, all-present/clear-remarks actions, per-student status/remarks, draft save and submit. Sessions tab lists marked rosters and opens detail records. Reports tab shows date-range summaries and per-student attendance percentages.
+  - `DemoSchoolSeeder` now creates class-teacher assignments and recent demo attendance sessions/records.
+  - Backend feature tests in `tests/Feature/Attendance/AttendanceManagementTest.php` (6 tests covering roster load, marking, update without duplicate session, assigned teacher access, unassigned teacher 403, roster validation, tenant-scoped summary). Full suite: 81/81 passing.
+  - Verified with `npm run build` in `webapp/` (199 modules, no TS errors; Vite still reports the existing large chunk-size warning after admin screens).
 
 Not Started:
 
-- Full RBAC (permission tables / action-level permissions) — currently a single `role` string per user.
-- School Admin CRUD modules still remaining: Attendance, Exams/Results, Homework/Study Material, Notices/Communication, Reports.
+- Full RBAC (permission tables / action-level permissions) — currently a single `role` string per user; intentionally deferred to the end of the School Admin module sequence per current direction.
+- School Admin CRUD modules still remaining: Exams/Results, Homework/Study Material, Notices/Communication, Reports.
 - Fees module follow-ups (out of scope this round): printable PDF receipts, fee reminders/notifications, late-fee fines, online payment gateway, bulk invoice regeneration, and a dedicated Accountant role (collection currently gated to school_admin/principal/super_admin until full RBAC lands).
 - Platform Super Admin web panel.
 - Student, Parent, and Teacher/Employee portals.
@@ -289,15 +299,15 @@ Build modules in this order:
 2. School profile and configuration.
 3. Academic session, class, section, and subject setup.
 4. Employee and teacher management.
-5. Role and permission management.
-6. Student management.
-7. Parent/guardian management.
-8. Attendance management.
-9. Fees and payment management.
-10. Exams, marks, and result management.
-11. Homework and study material.
-12. Notices and communication.
-13. Reports and audit logs.
+5. Student management.
+6. Parent/guardian management.
+7. Attendance management.
+8. Fees and payment management.
+9. Exams, marks, and result management.
+10. Homework and study material.
+11. Notices and communication.
+12. Reports and audit logs.
+13. Role and permission management.
 
 School Admin MVP success criteria:
 

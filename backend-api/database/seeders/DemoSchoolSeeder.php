@@ -3,7 +3,10 @@
 namespace Database\Seeders;
 
 use App\Models\AcademicSession;
+use App\Models\AttendanceRecord;
+use App\Models\AttendanceSession;
 use App\Models\Employee;
+use App\Models\EmployeeAssignment;
 use App\Models\FeeHead;
 use App\Models\FeeInvoice;
 use App\Models\FeeStructure;
@@ -155,6 +158,8 @@ class DemoSchoolSeeder extends Seeder
             );
         }
 
+        $this->seedTeacherAssignments($school, $classModels, $sectionModels);
+
         // --- Students (idempotent: only seed when this school has none) ---
         if (Student::where('school_id', $school->id)->exists()) {
             Student::where('school_id', $school->id)
@@ -177,6 +182,7 @@ class DemoSchoolSeeder extends Seeder
 
             $this->seedGuardians($school);
             $this->seedFees($school, $currentSession, $classModels);
+            $this->seedAttendance($school, $currentSession);
 
             return;
         }
@@ -219,6 +225,7 @@ class DemoSchoolSeeder extends Seeder
 
         $this->seedGuardians($school);
         $this->seedFees($school, $currentSession, $classModels);
+        $this->seedAttendance($school, $currentSession);
     }
 
     /**
@@ -382,5 +389,121 @@ class DemoSchoolSeeder extends Seeder
                     'pickup_allowed' => true,
                 ]);
             });
+    }
+
+    /**
+     * @param  array<string, SchoolClass>  $classModels
+     * @param  array<string, array<string, Section>>  $sectionModels
+     */
+    private function seedTeacherAssignments(School $school, array $classModels, array $sectionModels): void
+    {
+        $teachers = Employee::where('school_id', $school->id)
+            ->where('employee_type', 'teaching')
+            ->where('status', 'active')
+            ->orderBy('id')
+            ->get();
+
+        if ($teachers->isEmpty()) {
+            return;
+        }
+
+        $index = 0;
+        foreach ($classModels as $className => $class) {
+            foreach ($sectionModels[$className] ?? [] as $section) {
+                $teacher = $teachers[$index % $teachers->count()];
+
+                EmployeeAssignment::updateOrCreate(
+                    [
+                        'school_id' => $school->id,
+                        'employee_id' => $teacher->id,
+                        'class_id' => $class->id,
+                        'section_id' => $section->id,
+                        'assignment_type' => 'class_teacher',
+                    ],
+                    [
+                        'subject_id' => null,
+                        'status' => 'active',
+                    ],
+                );
+
+                $index++;
+            }
+        }
+    }
+
+    private function seedAttendance(School $school, AcademicSession $session): void
+    {
+        if (AttendanceSession::where('school_id', $school->id)->exists()) {
+            return;
+        }
+
+        $marker = User::where('school_id', $school->id)->where('role', 'school_admin')->first();
+
+        if ($marker === null) {
+            return;
+        }
+
+        $classSectionPairs = Student::where('school_id', $school->id)
+            ->where('academic_session_id', $session->id)
+            ->where('status', 'active')
+            ->whereNotNull('class_id')
+            ->whereNotNull('section_id')
+            ->select('class_id', 'section_id')
+            ->distinct()
+            ->orderBy('class_id')
+            ->orderBy('section_id')
+            ->limit(8)
+            ->get();
+
+        $dates = collect();
+        $cursor = Carbon::now();
+        while ($dates->count() < 6) {
+            if (! $cursor->isWeekend()) {
+                $dates->push($cursor->toDateString());
+            }
+            $cursor = $cursor->copy()->subDay();
+        }
+
+        foreach ($classSectionPairs as $pairIndex => $pair) {
+            foreach ($dates as $dateIndex => $date) {
+                $attendanceSession = AttendanceSession::create([
+                    'school_id' => $school->id,
+                    'academic_session_id' => $session->id,
+                    'class_id' => $pair->class_id,
+                    'section_id' => $pair->section_id,
+                    'attendance_date' => $date,
+                    'marked_by' => $marker->id,
+                    'status' => 'submitted',
+                    'remarks' => $dateIndex === 0 ? 'Demo attendance roster' : null,
+                ]);
+
+                Student::where('school_id', $school->id)
+                    ->where('academic_session_id', $session->id)
+                    ->where('class_id', $pair->class_id)
+                    ->where('section_id', $pair->section_id)
+                    ->where('status', 'active')
+                    ->orderByRaw('CAST(roll_no AS UNSIGNED), roll_no')
+                    ->get()
+                    ->each(function (Student $student, int $studentIndex) use ($school, $attendanceSession, $pairIndex, $dateIndex) {
+                        $status = 'present';
+
+                        if (($studentIndex + $dateIndex + $pairIndex) % 17 === 0) {
+                            $status = 'absent';
+                        } elseif (($studentIndex + $dateIndex) % 11 === 0) {
+                            $status = 'late';
+                        } elseif (($studentIndex + $pairIndex) % 23 === 0) {
+                            $status = 'excused';
+                        }
+
+                        AttendanceRecord::create([
+                            'school_id' => $school->id,
+                            'attendance_session_id' => $attendanceSession->id,
+                            'student_id' => $student->id,
+                            'status' => $status,
+                            'remarks' => $status === 'present' ? null : ucfirst(str_replace('_', ' ', $status)),
+                        ]);
+                    });
+            }
+        }
     }
 }

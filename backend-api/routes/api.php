@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\Academic\AcademicSessionController;
+use App\Http\Controllers\Api\V1\Attendance\AttendanceController;
 use App\Http\Controllers\Api\V1\Academic\ClassController;
 use App\Http\Controllers\Api\V1\Academic\SectionController;
 use App\Http\Controllers\Api\V1\Academic\SubjectController;
@@ -78,6 +79,12 @@ Route::prefix('v1')->group(function () {
         Route::post('/students/{student}/transfer', [StudentController::class, 'transfer']);
         Route::post('/students/{student}/photo', [StudentController::class, 'uploadPhoto']);
         Route::get('/students/{student}/history', [StudentController::class, 'history']);
+
+        Route::get('/attendance/sessions', [AttendanceController::class, 'index']);
+        Route::get('/attendance/roster', [AttendanceController::class, 'roster']);
+        Route::post('/attendance/sessions', [AttendanceController::class, 'store']);
+        Route::get('/attendance/reports/summary', [AttendanceController::class, 'summary']);
+        Route::get('/attendance/sessions/{attendanceSession}', [AttendanceController::class, 'show']);
 
         Route::get('/guardians', [GuardianController::class, 'index']);
         Route::post('/guardians', [GuardianController::class, 'store']);
