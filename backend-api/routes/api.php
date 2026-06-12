@@ -1,10 +1,10 @@
 <?php
 
 use App\Http\Controllers\Api\V1\Academic\AcademicSessionController;
-use App\Http\Controllers\Api\V1\Attendance\AttendanceController;
 use App\Http\Controllers\Api\V1\Academic\ClassController;
 use App\Http\Controllers\Api\V1\Academic\SectionController;
 use App\Http\Controllers\Api\V1\Academic\SubjectController;
+use App\Http\Controllers\Api\V1\Attendance\AttendanceController;
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\Employees\EmployeeController;
@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\V1\Fees\StudentFeeController;
 use App\Http\Controllers\Api\V1\Guardians\GuardianController;
 use App\Http\Controllers\Api\V1\Learning\HomeworkAssignmentController;
 use App\Http\Controllers\Api\V1\Learning\StudyMaterialController;
+use App\Http\Controllers\Api\V1\Notices\NoticeController;
 use App\Http\Controllers\Api\V1\SchoolProfileController;
 use App\Http\Controllers\Api\V1\Students\StudentController;
 use Illuminate\Support\Facades\Route;
@@ -105,6 +106,15 @@ Route::prefix('v1')->group(function () {
         Route::put('/study-materials/{studyMaterial}', [StudyMaterialController::class, 'update']);
         Route::delete('/study-materials/{studyMaterial}', [StudyMaterialController::class, 'destroy']);
         Route::post('/study-materials/{studyMaterial}/attachment', [StudyMaterialController::class, 'uploadAttachment']);
+
+        Route::get('/notices', [NoticeController::class, 'index']);
+        Route::post('/notices', [NoticeController::class, 'store']);
+        Route::get('/notices/{notice}', [NoticeController::class, 'show']);
+        Route::put('/notices/{notice}', [NoticeController::class, 'update']);
+        Route::delete('/notices/{notice}', [NoticeController::class, 'destroy']);
+        Route::post('/notices/{notice}/attachment', [NoticeController::class, 'uploadAttachment']);
+        Route::post('/notices/{notice}/read', [NoticeController::class, 'markRead']);
+        Route::get('/notices/{notice}/delivery', [NoticeController::class, 'delivery']);
 
         Route::get('/exams', [ExamController::class, 'index']);
         Route::post('/exams', [ExamController::class, 'store']);

@@ -16,6 +16,8 @@ use App\Models\FeeStructure;
 use App\Models\FeeStructureItem;
 use App\Models\Guardian;
 use App\Models\HomeworkAssignment;
+use App\Models\Notice;
+use App\Models\NoticeRead;
 use App\Models\School;
 use App\Models\SchoolClass;
 use App\Models\Section;
@@ -23,9 +25,10 @@ use App\Models\Student;
 use App\Models\StudyMaterial;
 use App\Models\Subject;
 use App\Models\User;
+use App\Services\ExamResultService;
 use App\Services\Fees\FeeAssignmentService;
 use App\Services\Fees\FeePaymentService;
-use App\Services\ExamResultService;
+use App\Services\NoticeService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
@@ -191,6 +194,7 @@ class DemoSchoolSeeder extends Seeder
             $this->seedAttendance($school, $currentSession);
             $this->seedLearningResources($school, $currentSession);
             $this->seedExams($school, $currentSession);
+            $this->seedNotices($school);
 
             return;
         }
@@ -236,6 +240,7 @@ class DemoSchoolSeeder extends Seeder
         $this->seedAttendance($school, $currentSession);
         $this->seedLearningResources($school, $currentSession);
         $this->seedExams($school, $currentSession);
+        $this->seedNotices($school);
     }
 
     /**
@@ -689,6 +694,100 @@ class DemoSchoolSeeder extends Seeder
                     (int) $scope->section_id,
                     $publisher,
                 );
+            }
+        }
+    }
+
+    private function seedNotices(School $school): void
+    {
+        $publisher = User::where('school_id', $school->id)->where('role', 'school_admin')->first();
+
+        if ($publisher === null) {
+            return;
+        }
+
+        $noticeService = app(NoticeService::class);
+        $firstClass = SchoolClass::where('school_id', $school->id)->orderBy('sequence')->first();
+        $firstSection = $firstClass?->sections()->orderBy('id')->first();
+        $definitions = [
+            [
+                'title' => 'Annual Foundation Day Celebration',
+                'body' => 'Students, parents, and staff are invited to the annual Foundation Day celebration in the main auditorium.',
+                'category' => 'event',
+                'priority' => 'important',
+                'status' => 'published',
+                'publish_at' => Carbon::now()->subDays(2),
+                'published_at' => Carbon::now()->subDays(2),
+                'expires_at' => Carbon::now()->addDays(10),
+                'targets' => [['type' => 'school']],
+            ],
+            [
+                'title' => 'Weather Advisory',
+                'body' => 'Please monitor official school updates before departure. Transport timing changes will be shared through the school office.',
+                'category' => 'urgent_alert',
+                'priority' => 'urgent',
+                'status' => 'published',
+                'publish_at' => Carbon::now()->subHours(4),
+                'published_at' => Carbon::now()->subHours(4),
+                'expires_at' => Carbon::now()->addDays(2),
+                'targets' => [
+                    ['type' => 'role', 'value' => 'parent'],
+                    ['type' => 'role', 'value' => 'employee'],
+                ],
+            ],
+            [
+                'title' => 'Post-Examination Review Meeting',
+                'body' => 'The class teacher will review Term I performance and answer parent questions during the scheduled meeting.',
+                'category' => 'exam',
+                'priority' => 'normal',
+                'status' => 'published',
+                'publish_at' => Carbon::now()->subDay(),
+                'published_at' => Carbon::now()->subDay(),
+                'expires_at' => Carbon::now()->addDays(14),
+                'targets' => $firstSection
+                    ? [['type' => 'section', 'id' => $firstSection->id]]
+                    : [['type' => 'school']],
+            ],
+            [
+                'title' => 'Upcoming School Holiday',
+                'body' => 'The school will remain closed on the announced holiday. Regular classes resume the following working day.',
+                'category' => 'holiday',
+                'priority' => 'normal',
+                'status' => 'scheduled',
+                'publish_at' => Carbon::now()->addDays(3),
+                'published_at' => null,
+                'expires_at' => Carbon::now()->addDays(9),
+                'targets' => [['type' => 'school']],
+            ],
+        ];
+
+        foreach ($definitions as $index => $definition) {
+            $targets = $definition['targets'];
+            unset($definition['targets']);
+
+            $notice = Notice::updateOrCreate(
+                ['school_id' => $school->id, 'title' => $definition['title']],
+                [
+                    ...$definition,
+                    'created_by' => $publisher->id,
+                    'published_by' => $definition['status'] === 'published' ? $publisher->id : null,
+                ],
+            );
+            $noticeService->syncTargets($notice, $targets);
+
+            if ($index === 0) {
+                User::where('school_id', $school->id)
+                    ->where('status', 'active')
+                    ->orderBy('id')
+                    ->limit(4)
+                    ->get()
+                    ->each(fn (User $user) => NoticeRead::updateOrCreate(
+                        ['notice_id' => $notice->id, 'user_id' => $user->id],
+                        [
+                            'school_id' => $school->id,
+                            'read_at' => Carbon::now()->subDay(),
+                        ],
+                    ));
             }
         }
     }

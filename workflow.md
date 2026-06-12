@@ -120,11 +120,23 @@ Completed:
   - `DemoSchoolSeeder` creates a Term I exam across four class/section scopes, schedules up to three subjects per scope, submits marks, and publishes demo results. Verified seed: 1 exam, 12 schedules, 132 marks, and 44 results.
   - Backend feature tests in `tests/Feature/Exams/ExamManagementTest.php` (8 tests covering CRUD/audit, validation, teacher assignment access, marks rules, grade/result calculation, incomplete publication guard, published lock/unpublish, and tenant isolation). Full suite: 96/96 passing with 393 assertions.
   - Verified with all five MySQL migrations, targeted ESLint for the new exam UI, and `npm run build` in `webapp/` (210 modules, no TypeScript errors; Vite still reports the existing large chunk-size warning).
+- Notices & Communication module (Phase 3, item 11):
+  - New tenant-scoped tables: `notices` (message, category, priority, draft/scheduled/published/archive state, publish/expiry timing, attachment), `notice_targets` (normalized school/role/class/section/student/guardian/employee audiences with display-label snapshots), and `notice_reads` (one read receipt per portal user).
+  - Models: `Notice`, `NoticeTarget`, and `NoticeRead`; all use `BelongsToSchool`. Scheduled notices become visible automatically when `publish_at` is reached, and expired notices automatically leave non-manager feeds without requiring a cron status update.
+  - API: paginated/filterable `GET/POST/GET one/PUT/DELETE /api/v1/notices`, `POST /notices/{id}/attachment`, `POST /notices/{id}/read`, and manager-only `GET /notices/{id}/delivery`.
+  - Targeting supports the requirement document's school-wide, role, class, section, student, parent/guardian, and employee audiences. Validation enforces same-school targets, valid roles, unique targets, future scheduled publication, and expiry after publication.
+  - Access: school_admin/principal/super_admin create, edit, archive, attach, and inspect delivery; teachers receive a read-only feed for school/staff/teacher notices and assigned class/section targets; parent targeting resolves through linked children and guardian portal users for future parent portal reuse.
+  - Delivery tracking resolves active portal accounts across the selected audience, reports read/unread counts, and lists recipient-level read timestamps. Direct student notices currently reach linked guardian accounts; student-account delivery will activate when student portal users are introduced.
+  - Web: `/admin/notices` — Notices sidebar item enabled; search/category/priority/status filters, pagination, create/edit/archive, attachment upload, draft/scheduled/published timing, audience builder with roles/classes/sections/individual recipient search, read-only teacher feed, notice detail, and delivery/read table.
+  - `DemoSchoolSeeder` creates four notices (event, urgent alert, exam meeting, scheduled holiday), five audience targets, and sample reads. Verified seed: 4 notices, 5 targets, 4 reads; 3 currently published and 1 scheduled.
+  - Backend feature tests in `tests/Feature/Notices/NoticeManagementTest.php` (8 tests covering normalized targets/audit, validation, teacher assignment visibility, automatic scheduling, parent/student targeting, role restrictions, attachment/read/delivery tracking, and tenant isolation). Full suite: 104/104 passing with 452 assertions.
+  - Verified with all three MySQL migrations, authenticated API smoke testing, targeted ESLint, and `npm run build` in `webapp/` (215 modules, no TypeScript errors; Vite still reports the existing large chunk-size warning).
 
 Not Started:
 
 - Full RBAC (permission tables / action-level permissions) — currently a single `role` string per user; intentionally deferred to the end of the School Admin module sequence per current direction.
-- School Admin CRUD modules still remaining: Notices/Communication and Reports.
+- School Admin CRUD module still remaining: Reports & Audit Logs.
+- Notices follow-ups: SMS/email/WhatsApp/push channel providers, delivery provider webhooks/statuses, reusable notification templates, and two-way parent-teacher messaging/meeting requests.
 - Fees module follow-ups (out of scope this round): printable PDF receipts, fee reminders/notifications, late-fee fines, online payment gateway, bulk invoice regeneration, and a dedicated Accountant role (collection currently gated to school_admin/principal/super_admin until full RBAC lands).
 - Platform Super Admin web panel.
 - Student, Parent, and Teacher/Employee portals.

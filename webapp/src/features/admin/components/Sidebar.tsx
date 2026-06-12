@@ -33,7 +33,7 @@ const primaryNav: NavItem[] = [
   { label: 'Fees', icon: FeesIcon, to: '/admin/fees' },
   { label: 'Exams & Results', icon: ExamsIcon, to: '/admin/exams' },
   { label: 'Homework & Materials', icon: HomeworkIcon, to: '/admin/learning' },
-  { label: 'Notices', icon: NoticesIcon },
+  { label: 'Notices', icon: NoticesIcon, to: '/admin/notices' },
 ]
 
 const secondaryNav: NavItem[] = [{ label: 'Settings', icon: SettingsIcon, to: '/admin/settings' }]

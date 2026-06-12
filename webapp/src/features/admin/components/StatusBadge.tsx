@@ -28,6 +28,7 @@ const STATUS_STYLES: Record<string, string> = {
   fail: 'bg-[#dc2626]/10 text-[#dc2626]',
   incomplete: 'bg-lime/15 text-[#b45309]',
   exempt: 'bg-ink/8 text-ink/55',
+  expired: 'bg-[#dc2626]/10 text-[#dc2626]',
 }
 
 export default function StatusBadge({ status }: { status: string }) {
