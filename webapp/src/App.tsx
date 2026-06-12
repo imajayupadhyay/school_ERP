@@ -14,6 +14,7 @@ import FeesPage from '@/features/admin/fees/FeesPage'
 import AttendancePage from '@/features/admin/attendance/AttendancePage'
 import LearningPage from '@/features/admin/learning/LearningPage'
 import ExamsPage from '@/features/admin/exams/ExamsPage'
+import TimetablePage from '@/features/admin/timetable/TimetablePage'
 import NoticesPage from '@/features/admin/notices/NoticesPage'
 import ReportsPage from '@/features/admin/reports/ReportsPage'
 import AccessPage from '@/features/admin/access/AccessPage'
@@ -64,6 +65,10 @@ function App() {
           <Route
             path="exams"
             element={<RequirePermission permission="exams.view"><ExamsPage /></RequirePermission>}
+          />
+          <Route
+            path="timetable"
+            element={<RequirePermission permission="timetables.view"><TimetablePage /></RequirePermission>}
           />
           <Route
             path="notices"

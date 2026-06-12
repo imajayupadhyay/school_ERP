@@ -19,6 +19,7 @@ use App\Models\HomeworkAssignment;
 use App\Models\Notice;
 use App\Models\NoticeRead;
 use App\Models\Permission;
+use App\Models\PeriodSlot;
 use App\Models\Role;
 use App\Models\School;
 use App\Models\SchoolClass;
@@ -26,6 +27,8 @@ use App\Models\Section;
 use App\Models\Student;
 use App\Models\StudyMaterial;
 use App\Models\Subject;
+use App\Models\Timetable;
+use App\Models\TimetableEntry;
 use App\Models\User;
 use App\Models\UserPermission;
 use App\Services\Access\AccessProvisioner;
@@ -201,6 +204,7 @@ class DemoSchoolSeeder extends Seeder
             $this->seedAttendance($school, $currentSession);
             $this->seedLearningResources($school, $currentSession);
             $this->seedExams($school, $currentSession);
+            $this->seedTimetable($school, $currentSession);
             $this->seedNotices($school);
 
             return;
@@ -247,6 +251,7 @@ class DemoSchoolSeeder extends Seeder
         $this->seedAttendance($school, $currentSession);
         $this->seedLearningResources($school, $currentSession);
         $this->seedExams($school, $currentSession);
+        $this->seedTimetable($school, $currentSession);
         $this->seedNotices($school);
     }
 
@@ -745,6 +750,103 @@ class DemoSchoolSeeder extends Seeder
                     (int) $scope->section_id,
                     $publisher,
                 );
+            }
+        }
+    }
+
+    /**
+     * Seed a school-wide bell schedule plus a couple of published, clash-free
+     * class-section timetables so the module has realistic demo data.
+     */
+    private function seedTimetable(School $school, AcademicSession $session): void
+    {
+        $slotDefs = [
+            ['name' => 'Period 1', 'sequence' => 1, 'start' => '08:00', 'end' => '08:45', 'break' => false],
+            ['name' => 'Period 2', 'sequence' => 2, 'start' => '08:45', 'end' => '09:30', 'break' => false],
+            ['name' => 'Period 3', 'sequence' => 3, 'start' => '09:30', 'end' => '10:15', 'break' => false],
+            ['name' => 'Short Break', 'sequence' => 4, 'start' => '10:15', 'end' => '10:30', 'break' => true],
+            ['name' => 'Period 4', 'sequence' => 5, 'start' => '10:30', 'end' => '11:15', 'break' => false],
+            ['name' => 'Period 5', 'sequence' => 6, 'start' => '11:15', 'end' => '12:00', 'break' => false],
+            ['name' => 'Lunch', 'sequence' => 7, 'start' => '12:00', 'end' => '12:40', 'break' => true],
+            ['name' => 'Period 6', 'sequence' => 8, 'start' => '12:40', 'end' => '13:25', 'break' => false],
+        ];
+
+        $slots = collect($slotDefs)->map(fn (array $def) => PeriodSlot::updateOrCreate(
+            ['school_id' => $school->id, 'sequence' => $def['sequence']],
+            [
+                'name' => $def['name'],
+                'start_time' => $def['start'],
+                'end_time' => $def['end'],
+                'is_break' => $def['break'],
+                'status' => 'active',
+            ],
+        ));
+
+        if (Timetable::where('school_id', $school->id)->exists()) {
+            return;
+        }
+
+        $teachingSlots = $slots->where('is_break', false)->values();
+
+        $teachers = Employee::where('school_id', $school->id)
+            ->where('employee_type', 'teaching')
+            ->where('status', 'active')
+            ->orderBy('id')
+            ->get();
+
+        if ($teachingSlots->isEmpty() || $teachers->isEmpty()) {
+            return;
+        }
+
+        $classSections = Student::where('school_id', $school->id)
+            ->where('academic_session_id', $session->id)
+            ->where('status', 'active')
+            ->whereNotNull('class_id')
+            ->whereNotNull('section_id')
+            ->select('class_id', 'section_id')
+            ->distinct()
+            ->orderBy('class_id')
+            ->limit(2)
+            ->get();
+
+        foreach ($classSections as $ttIndex => $scope) {
+            $class = SchoolClass::where('school_id', $school->id)->find($scope->class_id);
+
+            if ($class === null) {
+                continue;
+            }
+
+            $subjects = $class->subjects()->orderBy('subjects.id')->get();
+
+            if ($subjects->isEmpty()) {
+                continue;
+            }
+
+            $timetable = Timetable::create([
+                'school_id' => $school->id,
+                'academic_session_id' => $session->id,
+                'class_id' => $scope->class_id,
+                'section_id' => $scope->section_id,
+                'status' => 'published',
+                'published_at' => Carbon::now(),
+            ]);
+
+            for ($day = 1; $day <= 5; $day++) {
+                foreach ($teachingSlots as $slotIndex => $slot) {
+                    $subject = $subjects[$slotIndex % $subjects->count()];
+                    // Offsetting by the timetable index keeps the two demo
+                    // timetables from booking the same teacher in the same slot.
+                    $teacher = $teachers[($slotIndex + $ttIndex) % $teachers->count()];
+
+                    TimetableEntry::create([
+                        'school_id' => $school->id,
+                        'timetable_id' => $timetable->id,
+                        'day_of_week' => $day,
+                        'period_slot_id' => $slot->id,
+                        'subject_id' => $subject->id,
+                        'employee_id' => $teacher->id,
+                    ]);
+                }
             }
         }
     }

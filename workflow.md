@@ -6,7 +6,7 @@ This file is the project memory for the SchoolLID ERP build. Every AI agent and 
 
 ## Current Project State
 
-Status as of: 2026-06-12 (RBAC module added)
+Status as of: 2026-06-12 (Timetable module added)
 
 Completed:
 
@@ -149,6 +149,15 @@ Completed:
   - Web: `AuthContext` exposes `can(key)`; the **Sidebar now filters every module by its `*.view` permission** (a teacher/staff member only sees their allowed modules), routes are wrapped in `RequirePermission` (permission-denied panel otherwise), and each module page's `canEdit`/`canManage` flags are now `can('students.update')` etc. instead of role-string arrays. New **Roles & Permissions** page (`/admin/roles`, `features/admin/access/`) with a roles table and a module×action permission matrix editor (special actions flagged). New **per-employee Access drawer** in Teachers & Staff: assign role, 3-state per-permission overrides (inherit / grant / revoke), reset password, and activate/deactivate the login. `DemoSchoolSeeder` provisions the demo school's roles, backfills users, and adds a sample override (one teacher granted `students.create`, revoked `learning.delete`).
   - Backend feature tests in `tests/Feature/Access/RbacTest.php` (12 tests: catalog endpoint, owner full access, login payload permissions, custom-role create/sync, role assignment changes effective perms, per-user grant/revoke override, middleware blocks unauthorised writes, reset-password + status toggle, protected/in-use role delete guards, non-manager 403, cross-school tenant isolation). One existing test updated (teachers can no longer view the employee module). Full suite: **121/121 passing** (568 assertions).
   - Verified with `migrate:fresh --seed`, full `php artisan test`, `npm run build` (233 modules, no TS errors; existing chunk-size warning), and a live curl smoke against the demo school (owner `*` vs Subject Teacher scoped perms; teacher 403 on hidden modules/writes; admin grants `students.create` override → teacher write flips 403→422; reset-password/status 200; cross-school 404).
+- Timetable module (Phase 3 follow-up — admin builds weekly class timetables assigning teachers + subjects):
+  - New tenant-scoped tables (all `BelongsToSchool`): `period_slots` (school-wide bell schedule — name, sequence, start/end time, `is_break`, status), `timetables` (one per academic session + class + section, `draft`/`published` + `published_at`, unique per scope), and `timetable_entries` (one row per filled grid cell — day_of_week 1–6, period_slot, subject, employee; unique `[timetable, day, period_slot]`).
+  - Models `PeriodSlot`, `Timetable` (hasMany entries), `TimetableEntry`. Services keep controllers thin: `App\Services\Timetables\TimetableConflictService` (the **block + warn** core — detects a teacher double-booked within the submission or against another class-section timetable in the same session/day/period, returns readable clashes) and `TimetableAccessService` (manager vs teacher read scoping via `employee_assignments`, published-only for teachers).
+  - API (`Api/V1/Timetables/`, gated by new `timetables.*` permissions, audit-logged): `GET/POST/PUT/DELETE /api/v1/period-slots`; `GET /timetables` (filter `?academic_session_id=&class_id=&section_id=`), `POST /timetables` (create blank for a class-section), `GET /timetables/{id}` (grid + entries), `PUT /timetables/{id}/entries` (bulk upsert — runs the conflict check, 422 with `errors.entries[]` on clash), `POST /timetables/{id}/publish` + `/unpublish`, `DELETE /timetables/{id}`, and `GET /timetables/teacher/{employee}` (read-only weekly schedule; teachers may only view their own). Validation enforces same-school refs, section-belongs-to-class, subject-mapped-to-class, break slots can't hold a class, one entry per day+period.
+  - Permissions: new `timetables` module (`view/create/update/delete`, Academics group) in `config/permissions.php`; `timetables.view` granted to `class_teacher` and `teacher`. The `permission:` middleware is the single write-gate (FormRequests just check auth), so custom roles work.
+  - Web: `/admin/timetable` — Timetable sidebar item enabled; tabbed page (Class Timetables | Period Schedule | Teacher View). Class tab: session/class/section picker → create blank timetable → editable weekly grid (days × periods, break rows spanned, each cell opens a subject+teacher picker scoped to the class), draft save + publish/unpublish + delete, inline conflict-clash display. Period Schedule tab: bell-schedule CRUD with break flag. Teacher View: pick a teacher → read-only weekly grid. Reuses `PageHeader`/`SegmentedTabs`/`Modal`/`FormField`/`StatusBadge`/`TableUI`.
+  - `DemoSchoolSeeder` extended with `seedTimetable()`: 8 period slots (incl. Short Break + Lunch) and 2 published, clash-free class-section timetables (60 entries). Verified seed: 8 slots, 2 timetables, 60 entries.
+  - Backend feature tests in `tests/Feature/Timetables/TimetableManagementTest.php` (8 tests: period-slot CRUD + audit, timetable create + uniqueness guard, bulk entry save, unmapped-subject + break-slot rejection, **teacher double-booking blocked (422)**, publish/unpublish, teacher read-only access + own-only teacher view, tenant isolation). Full suite: **129/129 passing**.
+  - Verified with `migrate:fresh --seed`, `npm run build` (238 modules, no TS errors; existing chunk-size warning), targeted ESLint, and a live curl smoke against the demo school (period slots with breaks, 2 published timetables with per-cell subject/teacher, teacher view).
 
 Not Started:
 
@@ -494,7 +503,7 @@ Example path pattern:
 
 ## Current Immediate Next Steps
 
-School Admin Panel (Phase 3) is now feature-complete (modules 1–13). Next:
+School Admin Panel (Phase 3) is feature-complete (modules 1–13) plus a Timetable module (weekly class timetables with teacher-clash detection). Next:
 
 1. Surface permission-aware export controls in the UI (the backend already gates `students.export`/`reports.export`; wire the export buttons to those keys).
 2. Add CSV/PDF export + saved presets for Reports, and printable PDF receipts/reminders for Fees.

@@ -28,6 +28,8 @@ use App\Http\Controllers\Api\V1\Reports\AuditLogController;
 use App\Http\Controllers\Api\V1\Reports\ReportController;
 use App\Http\Controllers\Api\V1\SchoolProfileController;
 use App\Http\Controllers\Api\V1\Students\StudentController;
+use App\Http\Controllers\Api\V1\Timetables\PeriodSlotController;
+use App\Http\Controllers\Api\V1\Timetables\TimetableController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -173,6 +175,22 @@ Route::prefix('v1')->group(function () {
         Route::post('/exams/{exam}/results/publish', [ExamResultController::class, 'publish'])->middleware('permission:exams.publish');
         Route::post('/exams/{exam}/results/unpublish', [ExamResultController::class, 'unpublish'])->middleware('permission:exams.publish');
         Route::get('/exams/{exam}/students/{student}/result', [ExamResultController::class, 'show'])->middleware('permission:exams.view');
+
+        // --- Timetable: period schedule + class-section timetables ---
+        Route::get('/period-slots', [PeriodSlotController::class, 'index'])->middleware('permission:timetables.view');
+        Route::post('/period-slots', [PeriodSlotController::class, 'store'])->middleware('permission:timetables.create');
+        Route::put('/period-slots/{periodSlot}', [PeriodSlotController::class, 'update'])->middleware('permission:timetables.update');
+        Route::delete('/period-slots/{periodSlot}', [PeriodSlotController::class, 'destroy'])->middleware('permission:timetables.delete');
+
+        // The literal `teacher` route must precede the `{timetable}` wildcard.
+        Route::get('/timetables/teacher/{employee}', [TimetableController::class, 'teacher'])->middleware('permission:timetables.view');
+        Route::get('/timetables', [TimetableController::class, 'index'])->middleware('permission:timetables.view');
+        Route::post('/timetables', [TimetableController::class, 'store'])->middleware('permission:timetables.create');
+        Route::get('/timetables/{timetable}', [TimetableController::class, 'show'])->middleware('permission:timetables.view');
+        Route::put('/timetables/{timetable}/entries', [TimetableController::class, 'updateEntries'])->middleware('permission:timetables.update');
+        Route::post('/timetables/{timetable}/publish', [TimetableController::class, 'publish'])->middleware('permission:timetables.update');
+        Route::post('/timetables/{timetable}/unpublish', [TimetableController::class, 'unpublish'])->middleware('permission:timetables.update');
+        Route::delete('/timetables/{timetable}', [TimetableController::class, 'destroy'])->middleware('permission:timetables.delete');
 
         // --- Guardians ---
         Route::get('/guardians', [GuardianController::class, 'index'])->middleware('permission:guardians.view');

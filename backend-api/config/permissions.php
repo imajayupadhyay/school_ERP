@@ -72,6 +72,11 @@ return [
             'group' => 'Academics',
             'actions' => ['view', 'create', 'update', 'delete', 'marks', 'publish'],
         ],
+        'timetables' => [
+            'label' => 'Timetable',
+            'group' => 'Academics',
+            'actions' => ['view', 'create', 'update', 'delete'],
+        ],
         'learning' => [
             'label' => 'Homework & Materials',
             'group' => 'Academics',
@@ -167,6 +172,7 @@ return [
                 'academic.view',
                 'attendance.view', 'attendance.create',
                 'exams.view', 'exams.marks',
+                'timetables.view',
                 'learning.*',
                 'notices.view',
             ],
@@ -182,6 +188,7 @@ return [
                 'academic.view',
                 'attendance.view', 'attendance.create',
                 'exams.view', 'exams.marks',
+                'timetables.view',
                 'learning.*',
                 'notices.view',
             ],

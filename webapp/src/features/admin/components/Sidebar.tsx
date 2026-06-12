@@ -8,6 +8,7 @@ import {
   TeachersIcon,
   ClassesIcon,
   AttendanceIcon,
+  CalendarIcon,
   FeesIcon,
   ExamsIcon,
   HomeworkIcon,
@@ -29,23 +30,50 @@ interface NavItem {
   permission?: string
 }
 
-const primaryNav: NavItem[] = [
-  { label: 'Dashboard', icon: DashboardIcon, to: '/admin', permission: 'dashboard.view' },
-  { label: 'Students', icon: StudentsIcon, to: '/admin/students', permission: 'students.view' },
-  { label: 'Parents & Guardians', icon: ParentsIcon, to: '/admin/guardians', permission: 'guardians.view' },
-  { label: 'Teachers & Staff', icon: TeachersIcon, to: '/admin/employees', permission: 'employees.view' },
-  { label: 'Classes', icon: ClassesIcon, to: '/admin/academic-setup', permission: 'academic.view' },
-  { label: 'Attendance', icon: AttendanceIcon, to: '/admin/attendance', permission: 'attendance.view' },
-  { label: 'Fees', icon: FeesIcon, to: '/admin/fees', permission: 'fees.view' },
-  { label: 'Exams & Results', icon: ExamsIcon, to: '/admin/exams', permission: 'exams.view' },
-  { label: 'Homework & Materials', icon: HomeworkIcon, to: '/admin/learning', permission: 'learning.view' },
-  { label: 'Notices', icon: NoticesIcon, to: '/admin/notices', permission: 'notices.view' },
-  { label: 'Reports & Audit Logs', icon: ReportsIcon, to: '/admin/reports', permission: 'reports.view' },
-]
+interface NavGroup {
+  label: string
+  items: NavItem[]
+}
 
-const secondaryNav: NavItem[] = [
-  { label: 'Roles & Permissions', icon: ShieldIcon, to: '/admin/roles', permission: 'access.view' },
-  { label: 'Settings', icon: SettingsIcon, to: '/admin/settings', permission: 'settings.view' },
+/** Grouped navigation — sections mirror the backend permission groups. */
+const navGroups: NavGroup[] = [
+  {
+    label: 'Overview',
+    items: [{ label: 'Dashboard', icon: DashboardIcon, to: '/admin', permission: 'dashboard.view' }],
+  },
+  {
+    label: 'People',
+    items: [
+      { label: 'Students', icon: StudentsIcon, to: '/admin/students', permission: 'students.view' },
+      { label: 'Parents & Guardians', icon: ParentsIcon, to: '/admin/guardians', permission: 'guardians.view' },
+      { label: 'Teachers & Staff', icon: TeachersIcon, to: '/admin/employees', permission: 'employees.view' },
+    ],
+  },
+  {
+    label: 'Academics',
+    items: [
+      { label: 'Classes', icon: ClassesIcon, to: '/admin/academic-setup', permission: 'academic.view' },
+      { label: 'Timetable', icon: CalendarIcon, to: '/admin/timetable', permission: 'timetables.view' },
+      { label: 'Attendance', icon: AttendanceIcon, to: '/admin/attendance', permission: 'attendance.view' },
+      { label: 'Exams & Results', icon: ExamsIcon, to: '/admin/exams', permission: 'exams.view' },
+      { label: 'Homework & Materials', icon: HomeworkIcon, to: '/admin/learning', permission: 'learning.view' },
+    ],
+  },
+  {
+    label: 'Operations',
+    items: [
+      { label: 'Fees', icon: FeesIcon, to: '/admin/fees', permission: 'fees.view' },
+      { label: 'Notices', icon: NoticesIcon, to: '/admin/notices', permission: 'notices.view' },
+    ],
+  },
+  {
+    label: 'System',
+    items: [
+      { label: 'Reports & Audit Logs', icon: ReportsIcon, to: '/admin/reports', permission: 'reports.view' },
+      { label: 'Roles & Permissions', icon: ShieldIcon, to: '/admin/roles', permission: 'access.view' },
+      { label: 'Settings', icon: SettingsIcon, to: '/admin/settings', permission: 'settings.view' },
+    ],
+  },
 ]
 
 interface SidebarProps {
@@ -65,8 +93,10 @@ export default function Sidebar({
 }: SidebarProps) {
   const { can } = useAuth()
   const visible = (item: NavItem) => !item.permission || can(item.permission)
-  const primaryItems = primaryNav.filter(visible)
-  const secondaryItems = secondaryNav.filter(visible)
+  // Filter each group by permission, then drop any group left empty.
+  const visibleGroups = navGroups
+    .map((group) => ({ ...group, items: group.items.filter(visible) }))
+    .filter((group) => group.items.length > 0)
 
   return (
     <>
@@ -112,29 +142,18 @@ export default function Sidebar({
 
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto px-3 py-5">
-          <GroupLabel collapsed={collapsed}>Main</GroupLabel>
-          <ul className="space-y-1">
-            {primaryItems.map((item) => (
-              <li key={item.label}>
-                <NavItemLink item={item} collapsed={collapsed} onNavigate={onCloseMobile} />
-              </li>
-            ))}
-          </ul>
-
-          {secondaryItems.length > 0 && (
-            <>
-              <GroupLabel collapsed={collapsed} className="pt-6">
-                System
-              </GroupLabel>
+          {visibleGroups.map((group, index) => (
+            <div key={group.label} className={index > 0 ? 'pt-6' : ''}>
+              <GroupLabel collapsed={collapsed}>{group.label}</GroupLabel>
               <ul className="space-y-1">
-                {secondaryItems.map((item) => (
+                {group.items.map((item) => (
                   <li key={item.label}>
                     <NavItemLink item={item} collapsed={collapsed} onNavigate={onCloseMobile} />
                   </li>
                 ))}
               </ul>
-            </>
-          )}
+            </div>
+          ))}
         </nav>
 
         {/* Collapse toggle (desktop only) */}
@@ -168,20 +187,12 @@ export default function Sidebar({
   )
 }
 
-function GroupLabel({
-  collapsed,
-  className = '',
-  children,
-}: {
-  collapsed: boolean
-  className?: string
-  children: React.ReactNode
-}) {
+function GroupLabel({ collapsed, children }: { collapsed: boolean; children: React.ReactNode }) {
   return (
     <p
       className={`px-3 pb-2 text-[0.66rem] font-semibold uppercase tracking-[0.18em] text-paper/35 ${
         collapsed ? 'lg:hidden' : ''
-      } ${className}`}
+      }`}
     >
       {children}
     </p>
