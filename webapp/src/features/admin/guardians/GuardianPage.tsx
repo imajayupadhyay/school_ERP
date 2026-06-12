@@ -62,7 +62,7 @@ export default function GuardianPage() {
   const queryClient = useQueryClient()
 
   const [page, setPage] = useState(1)
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(() => new URLSearchParams(window.location.search).get('q') ?? '')
   const [status, setStatus] = useState('')
   const [portalStatus, setPortalStatus] = useState('')
   const [guardianModal, setGuardianModal] = useState<Guardian | 'new' | null>(null)

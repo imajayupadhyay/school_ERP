@@ -78,7 +78,7 @@ export default function StudentPage() {
   const queryClient = useQueryClient()
 
   const [page, setPage] = useState(1)
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(() => new URLSearchParams(window.location.search).get('q') ?? '')
   const [status, setStatus] = useState('')
   const [gender, setGender] = useState('')
   const [sessionId, setSessionId] = useState('')

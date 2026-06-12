@@ -71,7 +71,7 @@ export default function EmployeePage() {
   const queryClient = useQueryClient()
 
   const [page, setPage] = useState(1)
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(() => new URLSearchParams(window.location.search).get('q') ?? '')
   const [status, setStatus] = useState('')
   const [employeeType, setEmployeeType] = useState('')
   const [employeeModal, setEmployeeModal] = useState<Employee | 'new' | null>(null)

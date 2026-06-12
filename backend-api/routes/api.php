@@ -27,6 +27,7 @@ use App\Http\Controllers\Api\V1\Notices\NoticeController;
 use App\Http\Controllers\Api\V1\Reports\AuditLogController;
 use App\Http\Controllers\Api\V1\Reports\ReportController;
 use App\Http\Controllers\Api\V1\SchoolProfileController;
+use App\Http\Controllers\Api\V1\SearchController;
 use App\Http\Controllers\Api\V1\Students\StudentController;
 use App\Http\Controllers\Api\V1\Timetables\PeriodSlotController;
 use App\Http\Controllers\Api\V1\Timetables\TimetableController;
@@ -55,6 +56,10 @@ Route::prefix('v1')->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout']);
 
         Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('permission:dashboard.view');
+
+        // Global topbar search — open to any authenticated user; the service
+        // only includes categories the user can view (and stays tenant-scoped).
+        Route::get('/search', [SearchController::class, 'index']);
 
         // --- Reports & audit logs ---
         Route::get('/reports/overview', [ReportController::class, 'overview'])->middleware('permission:reports.view');
