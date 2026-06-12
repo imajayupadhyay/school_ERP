@@ -5,8 +5,10 @@ import { extractErrorMessage } from '@/lib/errors'
 import FormField, { inputClass } from '../../components/FormField'
 import Modal from '../../components/Modal'
 import StatusBadge from '../../components/StatusBadge'
+import { EditIcon, TrashIcon } from '../../components/icons'
 import { createFeeHead, deleteFeeHead, fetchFeeHeads, updateFeeHead } from '../api'
 import type { FeeHead, FeeHeadPayload } from '../types'
+import { AddButton, FeeErrorState, FeeTableSkeleton, RowAction } from './FeeStates'
 
 export default function FeeHeadsTab({ canEdit }: { canEdit: boolean }) {
   const queryClient = useQueryClient()
@@ -41,82 +43,88 @@ export default function FeeHeadsTab({ canEdit }: { canEdit: boolean }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <p className="text-[0.9rem] text-ink/55">
           Fee components such as Tuition, Transport, Admission, or Exam — the building blocks of a fee structure.
         </p>
         {canEdit && (
-          <button
-            type="button"
+          <AddButton
+            label="Add Fee Head"
             onClick={() => {
               setModalError(null)
               setModal('new')
             }}
-            className="shrink-0 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-accent-2"
-          >
-            Add Fee Head
-          </button>
+          />
         )}
       </div>
 
       {isLoading ? (
-        <div className="h-64 animate-pulse rounded-2xl bg-ink/5" />
+        <FeeTableSkeleton rows={5} />
       ) : isError ? (
-        <div className="grid place-items-center rounded-2xl border border-line bg-white py-16">
-          <button onClick={() => refetch()} className="rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-white">
-            Try again
-          </button>
-        </div>
+        <FeeErrorState onRetry={() => refetch()} />
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-line bg-white">
+        <div className="overflow-x-auto rounded-2xl border border-line bg-white shadow-sm">
           <table className="w-full text-left text-[0.85rem]">
             <thead>
-              <tr className="border-b border-line bg-paper/60 text-[0.72rem] uppercase tracking-wider text-ink/45">
-                <th className="px-5 py-3 font-semibold">Name</th>
-                <th className="px-4 py-3 font-semibold">Code</th>
-                <th className="px-4 py-3 font-semibold">Type</th>
-                <th className="px-4 py-3 font-semibold">Status</th>
-                {canEdit && <th className="px-5 py-3 text-right font-semibold">Actions</th>}
+              <tr className="border-b border-line bg-paper/60 text-[0.7rem] uppercase tracking-[0.08em] text-ink/45">
+                <th className="px-5 py-3.5 font-bold">Name</th>
+                <th className="px-4 py-3.5 font-bold">Code</th>
+                <th className="px-4 py-3.5 font-bold">Type</th>
+                <th className="px-4 py-3.5 font-bold">Status</th>
+                {canEdit && <th className="px-5 py-3.5 text-right font-bold">Actions</th>}
               </tr>
             </thead>
             <tbody>
               {heads.length === 0 ? (
                 <tr>
-                  <td colSpan={canEdit ? 5 : 4} className="px-6 py-10 text-center text-ink/40">
+                  <td colSpan={canEdit ? 5 : 4} className="px-6 py-12 text-center text-[0.86rem] text-ink/40">
                     No fee heads yet. Add one to start building fee structures.
                   </td>
                 </tr>
               ) : (
                 heads.map((head) => (
-                  <tr key={head.id} className="border-b border-line/60 last:border-0 hover:bg-paper/50">
-                    <td className="px-5 py-3 font-medium text-ink">{head.name}</td>
-                    <td className="px-4 py-3 text-ink/65">{head.code || '—'}</td>
-                    <td className="px-4 py-3 text-ink/65">{head.is_optional ? 'Optional' : 'Mandatory'}</td>
+                  <tr key={head.id} className="group border-b border-line/60 transition-colors last:border-0 hover:bg-accent/[0.035]">
+                    <td className="px-5 py-3 font-semibold text-ink">{head.name}</td>
+                    <td className="px-4 py-3 text-ink/65">
+                      {head.code ? (
+                        <span className="rounded-md bg-ink/[0.06] px-2 py-0.5 font-mono text-[0.78rem] text-ink/60">{head.code}</span>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[0.7rem] font-bold ${
+                          head.is_optional ? 'bg-[#2c49a6]/10 text-[#2c49a6]' : 'bg-ink/8 text-ink/55'
+                        }`}
+                      >
+                        {head.is_optional ? 'Optional' : 'Mandatory'}
+                      </span>
+                    </td>
                     <td className="px-4 py-3">
                       <StatusBadge status={head.status} />
                     </td>
                     {canEdit && (
-                      <td className="px-5 py-3 text-right">
-                        <div className="flex justify-end gap-3">
-                          <button
-                            type="button"
+                      <td className="px-5 py-3">
+                        <div className="flex items-center justify-end gap-1 opacity-80 transition-opacity group-hover:opacity-100">
+                          <RowAction
+                            label="Edit"
                             onClick={() => {
                               setModalError(null)
                               setModal(head)
                             }}
-                            className="text-[0.78rem] font-semibold text-ink/60 hover:text-accent"
                           >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
+                            <EditIcon width={17} height={17} />
+                          </RowAction>
+                          <RowAction
+                            label="Delete"
+                            danger
                             onClick={() => {
                               if (window.confirm(`Delete fee head "${head.name}"?`)) deleteMutation.mutate(head.id)
                             }}
-                            className="text-[0.78rem] font-semibold text-[#dc2626] hover:underline"
                           >
-                            Delete
-                          </button>
+                            <TrashIcon width={17} height={17} />
+                          </RowAction>
                         </div>
                       </td>
                     )}

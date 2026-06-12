@@ -5,8 +5,8 @@ import { extractErrorMessage } from '@/lib/errors'
 import FormField, { inputClass } from '../../components/FormField'
 import Modal from '../../components/Modal'
 import StatusBadge from '../../components/StatusBadge'
-import { PlusIcon } from '../../components/icons'
-import { TabSkeleton, ErrorState } from './TabStates'
+import { CheckIcon, EditIcon, StarIcon, TrashIcon } from '../../components/icons'
+import { AddButton, EmptyRow, ErrorState, RowAction, TabSkeleton } from './TabStates'
 import {
   fetchAcademicSessions,
   createAcademicSession,
@@ -67,40 +67,37 @@ export default function SessionsTab({ canEdit }: Props) {
     <div className="space-y-4">
       {canEdit && (
         <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={() => setEditing('new')}
-            className="inline-flex items-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-accent-2"
-          >
-            <PlusIcon width={16} height={16} />
-            Add Session
-          </button>
+          <AddButton label="Add Session" onClick={() => setEditing('new')} />
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-2xl border border-line bg-white">
+      <div className="overflow-x-auto rounded-2xl border border-line bg-white shadow-sm">
         <table className="w-full text-left text-[0.85rem]">
           <thead>
-            <tr className="border-b border-line bg-paper/60 text-[0.72rem] uppercase tracking-wider text-ink/45">
-              <th className="px-5 py-3 font-semibold">Name</th>
-              <th className="px-4 py-3 font-semibold">Start Date</th>
-              <th className="px-4 py-3 font-semibold">End Date</th>
-              <th className="px-4 py-3 font-semibold">Status</th>
-              <th className="px-4 py-3 font-semibold">Current</th>
-              {canEdit && <th className="px-5 py-3 font-semibold text-right">Actions</th>}
+            <tr className="border-b border-line bg-paper/60 text-[0.7rem] uppercase tracking-[0.08em] text-ink/45">
+              <th className="px-5 py-3.5 font-bold">Name</th>
+              <th className="px-4 py-3.5 font-bold">Start Date</th>
+              <th className="px-4 py-3.5 font-bold">End Date</th>
+              <th className="px-4 py-3.5 font-bold">Status</th>
+              <th className="px-4 py-3.5 font-bold">Current</th>
+              {canEdit && <th className="px-5 py-3.5 text-right font-bold">Actions</th>}
             </tr>
           </thead>
           <tbody>
             {sessions.length === 0 ? (
-              <tr>
-                <td colSpan={canEdit ? 6 : 5} className="px-6 py-10 text-center text-ink/40">
-                  No academic sessions yet.
-                </td>
-              </tr>
+              <EmptyRow colSpan={canEdit ? 6 : 5} message="No academic sessions yet." />
             ) : (
               sessions.map((session) => (
-                <tr key={session.id} className="border-b border-line/60 last:border-0 hover:bg-paper/50">
-                  <td className="px-5 py-3 font-medium text-ink">{session.name}</td>
+                <tr
+                  key={session.id}
+                  className="group border-b border-line/60 transition-colors last:border-0 hover:bg-accent/[0.035]"
+                >
+                  <td className="px-5 py-3">
+                    <div className="flex items-center gap-2.5 font-semibold text-ink">
+                      {session.is_current && <StarIcon width={15} height={15} className="text-[#d6991f]" />}
+                      {session.name}
+                    </div>
+                  </td>
                   <td className="px-4 py-3 text-ink/65">{session.start_date}</td>
                   <td className="px-4 py-3 text-ink/65">{session.end_date}</td>
                   <td className="px-4 py-3">
@@ -108,7 +105,8 @@ export default function SessionsTab({ canEdit }: Props) {
                   </td>
                   <td className="px-4 py-3">
                     {session.is_current ? (
-                      <span className="inline-flex rounded-full bg-lime/15 px-2.5 py-0.5 text-[0.72rem] font-semibold text-[#b45309]">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-lime/15 px-2.5 py-0.5 text-[0.72rem] font-semibold text-[#b45309]">
+                        <StarIcon width={12} height={12} />
                         Current
                       </span>
                     ) : canEdit ? (
@@ -116,36 +114,33 @@ export default function SessionsTab({ canEdit }: Props) {
                         type="button"
                         onClick={() => setCurrentMutation.mutate(session.id)}
                         disabled={setCurrentMutation.isPending}
-                        className="text-[0.78rem] font-semibold text-accent hover:underline disabled:opacity-50"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-[#168a66]/25 bg-[#168a66]/[0.07] px-2.5 py-1 text-[0.76rem] font-semibold text-[#168a66] transition hover:bg-[#168a66]/15 disabled:opacity-50"
                       >
-                        Set as current
+                        <CheckIcon width={14} height={14} />
+                        Set current
                       </button>
                     ) : (
                       <span className="text-ink/30">—</span>
                     )}
                   </td>
                   {canEdit && (
-                    <td className="px-5 py-3 text-right">
-                      <div className="flex justify-end gap-3">
-                        <button
-                          type="button"
-                          onClick={() => setEditing(session)}
-                          className="text-[0.78rem] font-semibold text-ink/60 hover:text-accent"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
+                    <td className="px-5 py-3">
+                      <div className="flex items-center justify-end gap-1 opacity-80 transition-opacity group-hover:opacity-100">
+                        <RowAction label="Edit" onClick={() => setEditing(session)}>
+                          <EditIcon width={17} height={17} />
+                        </RowAction>
+                        <RowAction
+                          label={session.is_current ? 'Current session can’t be deleted' : 'Delete'}
+                          danger
+                          disabled={session.is_current || deleteMutation.isPending}
                           onClick={() => {
                             if (window.confirm(`Delete academic session "${session.name}"?`)) {
                               deleteMutation.mutate(session.id)
                             }
                           }}
-                          disabled={session.is_current || deleteMutation.isPending}
-                          className="text-[0.78rem] font-semibold text-[#dc2626] hover:underline disabled:cursor-not-allowed disabled:opacity-40"
                         >
-                          Delete
-                        </button>
+                          <TrashIcon width={17} height={17} />
+                        </RowAction>
                       </div>
                     </td>
                   )}

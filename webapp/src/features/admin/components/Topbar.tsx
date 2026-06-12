@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/features/auth/AuthContext'
-import { BellIcon, ChevronDownIcon, LogoutIcon, MenuIcon, SearchIcon } from './icons'
+import { BellIcon, ChevronDownIcon, LogoutIcon, MenuIcon, PanelLeftIcon, SearchIcon } from './icons'
 
 interface TopbarProps {
+  collapsed: boolean
   onOpenMenu: () => void
+  onToggleCollapse: () => void
 }
 
-export default function Topbar({ onOpenMenu }: TopbarProps) {
+export default function Topbar({ collapsed, onOpenMenu, onToggleCollapse }: TopbarProps) {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -42,6 +44,18 @@ export default function Topbar({ onOpenMenu }: TopbarProps) {
         aria-label="Open menu"
       >
         <MenuIcon />
+      </button>
+
+      {/* Desktop collapse toggle */}
+      <button
+        type="button"
+        onClick={onToggleCollapse}
+        className="hidden rounded-lg p-2 text-ink/70 transition hover:bg-paper-2 lg:block"
+        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        aria-pressed={collapsed}
+        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+      >
+        <PanelLeftIcon />
       </button>
 
       {/* Search */}

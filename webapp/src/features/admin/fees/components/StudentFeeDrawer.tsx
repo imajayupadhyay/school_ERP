@@ -102,10 +102,20 @@ export default function StudentFeeDrawer({
   return (
     <Modal title={title} description={subtitle} onClose={onClose} size="lg">
       {isLoading ? (
-        <div className="h-72 animate-pulse rounded-2xl bg-ink/5" />
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-[68px] animate-pulse rounded-xl bg-ink/[0.05]" />
+            ))}
+          </div>
+          <div className="h-64 animate-pulse rounded-2xl bg-ink/[0.05]" />
+        </div>
       ) : isError || !plan ? (
         <div className="grid place-items-center py-16">
-          <button onClick={() => refetch()} className="rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-white">
+          <button
+            onClick={() => refetch()}
+            className="rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_-8px_rgba(238,106,44,.7)] transition hover:bg-accent-2 hover:-translate-y-0.5"
+          >
             Try again
           </button>
         </div>
@@ -120,10 +130,10 @@ export default function StudentFeeDrawer({
 
           {/* Summary */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <SummaryCard label="Billed" value={formatINR(plan.summary.total_billed)} />
-            <SummaryCard label="Collected" value={formatINR(plan.summary.total_paid)} />
-            <SummaryCard label="Outstanding" value={formatINR(plan.summary.outstanding)} accent />
-            <SummaryCard label="Overdue" value={String(plan.summary.overdue_count)} danger={plan.summary.overdue_count > 0} />
+            <SummaryCard label="Billed" value={formatINR(plan.summary.total_billed)} tone="ink" />
+            <SummaryCard label="Collected" value={formatINR(plan.summary.total_paid)} tone="success" />
+            <SummaryCard label="Outstanding" value={formatINR(plan.summary.outstanding)} tone="accent" />
+            <SummaryCard label="Overdue" value={String(plan.summary.overdue_count)} tone={plan.summary.overdue_count > 0 ? 'danger' : 'ink'} />
           </div>
 
           {plan.assignment ? (
@@ -281,11 +291,20 @@ export default function StudentFeeDrawer({
   )
 }
 
-function SummaryCard({ label, value, accent, danger }: { label: string; value: string; accent?: boolean; danger?: boolean }) {
+function SummaryCard({ label, value, tone = 'ink' }: { label: string; value: string; tone?: 'ink' | 'success' | 'accent' | 'danger' }) {
+  const map = {
+    ink: { value: 'text-ink', dot: 'bg-ink/30', card: 'border-line bg-white' },
+    success: { value: 'text-[#168a66]', dot: 'bg-[#168a66]', card: 'border-line bg-white' },
+    accent: { value: 'text-accent', dot: 'bg-accent', card: 'border-accent/25 bg-accent/[0.06]' },
+    danger: { value: 'text-[#dc2626]', dot: 'bg-[#dc2626]', card: 'border-[#dc2626]/25 bg-[#dc2626]/[0.05]' },
+  }[tone]
   return (
-    <div className="rounded-xl border border-line bg-white p-3">
-      <p className="text-[0.7rem] uppercase tracking-wider text-ink/45">{label}</p>
-      <p className={`mt-0.5 text-[1rem] font-bold ${danger ? 'text-[#dc2626]' : accent ? 'text-accent' : 'text-ink'}`}>{value}</p>
+    <div className={`rounded-xl border p-3 ${map.card}`}>
+      <div className="flex items-center gap-1.5">
+        <span className={`h-1.5 w-1.5 rounded-full ${map.dot}`} />
+        <p className="text-[0.7rem] uppercase tracking-wider text-ink/45">{label}</p>
+      </div>
+      <p className={`mt-1 text-[1.05rem] font-extrabold ${map.value}`}>{value}</p>
     </div>
   )
 }

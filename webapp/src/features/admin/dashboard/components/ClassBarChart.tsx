@@ -9,7 +9,7 @@ export default function ClassBarChart({ data }: Props) {
   const max = Math.max(1, ...data.map((d) => d.count))
 
   return (
-    <div className="rounded-2xl border border-line bg-white p-5 md:p-6">
+    <div className="rounded-2xl border border-line bg-white p-5 shadow-sm md:p-6">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-[1.02rem] font-bold text-ink">Students by Class</h3>

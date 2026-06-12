@@ -6,6 +6,7 @@ import { fetchAcademicSessions, fetchClasses } from '@/features/admin/academic-s
 import FormField, { inputClass } from '../../components/FormField'
 import Modal from '../../components/Modal'
 import StatusBadge from '../../components/StatusBadge'
+import { EditIcon, FilterIcon, TrashIcon } from '../../components/icons'
 import {
   createFeeStructure,
   deleteFeeStructure,
@@ -14,6 +15,7 @@ import {
   updateFeeStructure,
 } from '../api'
 import { FREQUENCY_LABELS, type FeeStructure, type FeeStructurePayload, type Frequency } from '../types'
+import { AddButton, FeeErrorState, FeeTableSkeleton, RowAction } from './FeeStates'
 
 const FREQUENCIES = Object.keys(FREQUENCY_LABELS) as Frequency[]
 
@@ -62,8 +64,12 @@ export default function StructuresTab({ canEdit }: { canEdit: boolean }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-wrap gap-2">
+      <div className="flex flex-col gap-3 rounded-2xl border border-line bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="mr-1 flex items-center gap-2 text-[0.8rem] font-semibold text-ink/55">
+            <FilterIcon width={16} height={16} className="text-accent" />
+            Filters
+          </span>
           <select value={sessionFilter} onChange={(e) => setSessionFilter(e.target.value)} className={`${inputClass} w-auto`} aria-label="Session">
             <option value="">All sessions</option>
             {sessions?.map((s) => (
@@ -82,18 +88,15 @@ export default function StructuresTab({ canEdit }: { canEdit: boolean }) {
           </select>
         </div>
         {canEdit && (
-          <button
-            type="button"
+          <AddButton
+            label="Add Fee Structure"
             disabled={!hasFeeHeads}
             title={hasFeeHeads ? undefined : 'Add at least one fee head first'}
             onClick={() => {
               setModalError(null)
               setModal('new')
             }}
-            className="shrink-0 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-accent-2 disabled:opacity-50"
-          >
-            Add Fee Structure
-          </button>
+          />
         )}
       </div>
 
@@ -104,65 +107,71 @@ export default function StructuresTab({ canEdit }: { canEdit: boolean }) {
       )}
 
       {isLoading ? (
-        <div className="h-64 animate-pulse rounded-2xl bg-ink/5" />
+        <FeeTableSkeleton rows={5} />
       ) : isError ? (
-        <div className="grid place-items-center rounded-2xl border border-line bg-white py-16">
-          <button onClick={() => refetch()} className="rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-white">
-            Try again
-          </button>
-        </div>
+        <FeeErrorState onRetry={() => refetch()} />
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-line bg-white">
+        <div className="overflow-x-auto rounded-2xl border border-line bg-white shadow-sm">
           <table className="w-full text-left text-[0.85rem]">
             <thead>
-              <tr className="border-b border-line bg-paper/60 text-[0.72rem] uppercase tracking-wider text-ink/45">
-                <th className="px-5 py-3 font-semibold">Name</th>
-                <th className="px-4 py-3 font-semibold">Session</th>
-                <th className="px-4 py-3 font-semibold">Class</th>
-                <th className="px-4 py-3 font-semibold">Components</th>
-                <th className="px-4 py-3 font-semibold">Status</th>
-                {canEdit && <th className="px-5 py-3 text-right font-semibold">Actions</th>}
+              <tr className="border-b border-line bg-paper/60 text-[0.7rem] uppercase tracking-[0.08em] text-ink/45">
+                <th className="px-5 py-3.5 font-bold">Name</th>
+                <th className="px-4 py-3.5 font-bold">Session</th>
+                <th className="px-4 py-3.5 font-bold">Class</th>
+                <th className="px-4 py-3.5 font-bold">Components</th>
+                <th className="px-4 py-3.5 font-bold">Status</th>
+                {canEdit && <th className="px-5 py-3.5 text-right font-bold">Actions</th>}
               </tr>
             </thead>
             <tbody>
               {structures.length === 0 ? (
                 <tr>
-                  <td colSpan={canEdit ? 6 : 5} className="px-6 py-10 text-center text-ink/40">
+                  <td colSpan={canEdit ? 6 : 5} className="px-6 py-12 text-center text-[0.86rem] text-ink/40">
                     No fee structures match the current filters.
                   </td>
                 </tr>
               ) : (
                 structures.map((structure) => (
-                  <tr key={structure.id} className="border-b border-line/60 last:border-0 hover:bg-paper/50">
-                    <td className="px-5 py-3 font-medium text-ink">{structure.name}</td>
+                  <tr key={structure.id} className="group border-b border-line/60 transition-colors last:border-0 hover:bg-accent/[0.035]">
+                    <td className="px-5 py-3 font-semibold text-ink">{structure.name}</td>
                     <td className="px-4 py-3 text-ink/65">{structure.academic_session?.name ?? '—'}</td>
-                    <td className="px-4 py-3 text-ink/65">{structure.class?.name ?? 'School-wide'}</td>
-                    <td className="px-4 py-3 text-ink/65">{structure.items_count ?? structure.items?.length ?? 0}</td>
+                    <td className="px-4 py-3">
+                      {structure.class?.name ? (
+                        <span className="text-ink/65">{structure.class.name}</span>
+                      ) : (
+                        <span className="rounded-full bg-lime/15 px-2 py-0.5 text-[0.7rem] font-bold text-[#b45309]">School-wide</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-ink/[0.06] px-2.5 py-0.5 text-[0.76rem] font-semibold text-ink/60">
+                        <span className="text-ink/80">{structure.items_count ?? structure.items?.length ?? 0}</span>
+                        components
+                      </span>
+                    </td>
                     <td className="px-4 py-3">
                       <StatusBadge status={structure.status} />
                     </td>
                     {canEdit && (
-                      <td className="px-5 py-3 text-right">
-                        <div className="flex justify-end gap-3">
-                          <button
-                            type="button"
+                      <td className="px-5 py-3">
+                        <div className="flex items-center justify-end gap-1 opacity-80 transition-opacity group-hover:opacity-100">
+                          <RowAction
+                            label="Edit"
                             onClick={() => {
                               setModalError(null)
                               setModal(structure)
                             }}
-                            className="text-[0.78rem] font-semibold text-ink/60 hover:text-accent"
                           >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
+                            <EditIcon width={17} height={17} />
+                          </RowAction>
+                          <RowAction
+                            label="Delete"
+                            danger
                             onClick={() => {
                               if (window.confirm(`Delete structure "${structure.name}"?`)) deleteMutation.mutate(structure.id)
                             }}
-                            className="text-[0.78rem] font-semibold text-[#dc2626] hover:underline"
                           >
-                            Delete
-                          </button>
+                            <TrashIcon width={17} height={17} />
+                          </RowAction>
                         </div>
                       </td>
                     )}

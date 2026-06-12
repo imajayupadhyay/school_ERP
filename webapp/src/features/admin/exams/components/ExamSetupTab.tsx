@@ -5,6 +5,8 @@ import type { AcademicSession, SchoolClass, Subject } from '../../academic-setup
 import FormField, { inputClass } from '../../components/FormField'
 import Modal from '../../components/Modal'
 import StatusBadge from '../../components/StatusBadge'
+import { ArchiveIcon, EditIcon, PlusIcon, SearchIcon, TrashIcon } from '../../components/icons'
+import { AddButton, RowAction, SecondaryButton, TableErrorState, TableSkeleton } from '../../components/TableUI'
 import {
   archiveExam,
   createExam,
@@ -95,15 +97,18 @@ export default function ExamSetupTab({ academicSessions, classes, subjects, canM
 
   return (
     <div className="space-y-5">
-      <div className="rounded-2xl border border-line bg-white p-4">
+      <div className="rounded-2xl border border-line bg-white p-4 shadow-sm">
         <div className="grid gap-3 md:grid-cols-[minmax(220px,1fr)_minmax(180px,260px)_auto]">
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            className={inputClass}
-            placeholder="Search exams"
-            aria-label="Search exams"
-          />
+          <label className="relative">
+            <SearchIcon className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink/35" width={17} height={17} />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              className={`${inputClass} pl-9`}
+              placeholder="Search exams"
+              aria-label="Search exams"
+            />
+          </label>
           <select
             value={sessionId}
             onChange={(event) => setSessionId(event.target.value)}
@@ -118,81 +123,80 @@ export default function ExamSetupTab({ academicSessions, classes, subjects, canM
               </option>
             ))}
           </select>
-          {canManage && (
-            <button
-              type="button"
-              onClick={() => setExamModal('new')}
-              className="rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-accent-2"
-            >
-              Add Exam
-            </button>
-          )}
+          {canManage && <AddButton label="Add Exam" onClick={() => setExamModal('new')} />}
         </div>
       </div>
 
       {examsQuery.isLoading ? (
-        <div className="h-72 animate-pulse rounded-2xl bg-ink/5" />
+        <TableSkeleton rows={5} />
       ) : examsQuery.isError ? (
-        <ErrorState message={extractErrorMessage(examsQuery.error)} onRetry={() => examsQuery.refetch()} />
+        <TableErrorState message={extractErrorMessage(examsQuery.error)} onRetry={() => examsQuery.refetch()} />
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-line bg-white">
+        <div className="overflow-x-auto rounded-2xl border border-line bg-white shadow-sm">
           <table className="w-full text-left text-[0.85rem]">
             <thead>
-              <tr className="border-b border-line bg-paper/60 text-[0.72rem] uppercase tracking-wider text-ink/45">
-                <th className="px-5 py-3 font-semibold">Exam</th>
-                <th className="px-4 py-3 font-semibold">Session</th>
-                <th className="px-4 py-3 font-semibold">Dates</th>
-                <th className="px-4 py-3 font-semibold">Papers</th>
-                <th className="px-4 py-3 font-semibold">Status</th>
-                <th className="px-5 py-3 text-right font-semibold">Action</th>
+              <tr className="border-b border-line bg-paper/60 text-[0.7rem] uppercase tracking-[0.08em] text-ink/45">
+                <th className="px-5 py-3.5 font-bold">Exam</th>
+                <th className="px-4 py-3.5 font-bold">Session</th>
+                <th className="px-4 py-3.5 font-bold">Dates</th>
+                <th className="px-4 py-3.5 font-bold">Papers</th>
+                <th className="px-4 py-3.5 font-bold">Status</th>
+                <th className="px-5 py-3.5 text-right font-bold">Action</th>
               </tr>
             </thead>
             <tbody>
               {exams.length === 0 ? (
-                <tr><td colSpan={6} className="px-6 py-10 text-center text-ink/40">No exams match the current filters.</td></tr>
-              ) : exams.map((exam) => (
+                <tr><td colSpan={6} className="px-6 py-12 text-center text-[0.86rem] text-ink/40">No exams match the current filters.</td></tr>
+              ) : exams.map((exam) => {
+                const isSelected = activeExamId === exam.id
+                return (
                 <tr
                   key={exam.id}
                   onClick={() => setSelectedExamId(exam.id)}
-                  className={`cursor-pointer border-b border-line/60 last:border-0 hover:bg-paper/50 ${
-                    activeExamId === exam.id ? 'bg-accent/[0.045]' : ''
+                  className={`group cursor-pointer border-b border-line/60 transition-colors last:border-0 ${
+                    isSelected ? 'bg-accent/[0.06]' : 'hover:bg-accent/[0.035]'
                   }`}
                 >
                   <td className="px-5 py-3">
-                    <p className="font-semibold text-ink">{exam.name}</p>
-                    <p className="text-[0.74rem] text-ink/45">{EXAM_TYPE_LABELS[exam.exam_type]}</p>
+                    <div className="flex items-center gap-2.5">
+                      <span className={`h-8 w-1 shrink-0 rounded-full transition ${isSelected ? 'bg-accent' : 'bg-transparent'}`} />
+                      <div>
+                        <p className="font-semibold text-ink">{exam.name}</p>
+                        <p className="text-[0.74rem] text-ink/45">{EXAM_TYPE_LABELS[exam.exam_type]}</p>
+                      </div>
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-ink/65">{exam.academic_session?.name ?? '—'}</td>
-                  <td className="px-4 py-3 text-ink/65">{exam.start_date} to {exam.end_date}</td>
-                  <td className="px-4 py-3 text-ink/65">{exam.schedules_count}</td>
+                  <td className="px-4 py-3 text-ink/65">{exam.start_date} → {exam.end_date}</td>
+                  <td className="px-4 py-3">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-ink/[0.06] px-2.5 py-0.5 text-[0.76rem] font-semibold text-ink/60">
+                      <span className="text-ink/80">{exam.schedules_count}</span>
+                      papers
+                    </span>
+                  </td>
                   <td className="px-4 py-3"><StatusBadge status={exam.status} /></td>
-                  <td className="px-5 py-3 text-right">
+                  <td className="px-5 py-3">
                     {canManage && (
-                      <div className="flex justify-end gap-3">
-                        <button
-                          type="button"
-                          onClick={(event) => { event.stopPropagation(); setExamModal(exam) }}
-                          className="text-[0.78rem] font-semibold text-ink/60 hover:text-accent"
-                        >
-                          Edit
-                        </button>
+                      <div className="flex items-center justify-end gap-1 opacity-80 transition-opacity group-hover:opacity-100">
+                        <RowAction label="Edit" onClick={() => setExamModal(exam)}>
+                          <EditIcon width={17} height={17} />
+                        </RowAction>
                         {exam.status !== 'archived' && (
-                          <button
-                            type="button"
-                            onClick={(event) => {
-                              event.stopPropagation()
+                          <RowAction
+                            label="Archive"
+                            danger
+                            onClick={() => {
                               if (window.confirm(`Archive exam "${exam.name}"?`)) archiveMutation.mutate(exam.id)
                             }}
-                            className="text-[0.78rem] font-semibold text-[#dc2626] hover:underline"
                           >
-                            Archive
-                          </button>
+                            <ArchiveIcon width={17} height={17} />
+                          </RowAction>
                         )}
                       </div>
                     )}
                   </td>
                 </tr>
-              ))}
+              )})}
             </tbody>
           </table>
         </div>
@@ -206,24 +210,18 @@ export default function ExamSetupTab({ academicSessions, classes, subjects, canM
           </p>
         </div>
         {canManage && selectedExam && selectedExam.status !== 'archived' && (
-          <button
-            type="button"
-            onClick={() => setScheduleModal('new')}
-            className="rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-ink/85"
-          >
-            Add Paper
-          </button>
+          <SecondaryButton label="Add Paper" icon={<PlusIcon width={15} height={15} />} onClick={() => setScheduleModal('new')} />
         )}
       </div>
 
       {!selectedExam ? (
-        <div className="rounded-2xl border border-line bg-white px-5 py-12 text-center text-[0.9rem] text-ink/45">
+        <div className="rounded-2xl border border-dashed border-line bg-white px-5 py-12 text-center text-[0.9rem] text-ink/45 shadow-sm">
           Select an exam above to manage its schedule.
         </div>
       ) : schedulesQuery.isLoading ? (
-        <div className="h-64 animate-pulse rounded-2xl bg-ink/5" />
+        <TableSkeleton rows={3} />
       ) : schedulesQuery.isError ? (
-        <ErrorState message={extractErrorMessage(schedulesQuery.error)} onRetry={() => schedulesQuery.refetch()} />
+        <TableErrorState message={extractErrorMessage(schedulesQuery.error)} onRetry={() => schedulesQuery.refetch()} />
       ) : (
         <ScheduleTable
           schedules={schedulesQuery.data ?? []}
@@ -281,25 +279,25 @@ function ScheduleTable({
   onDelete: (schedule: ExamSchedule) => void
 }) {
   return (
-    <div className="overflow-x-auto rounded-2xl border border-line bg-white">
+    <div className="overflow-x-auto rounded-2xl border border-line bg-white shadow-sm">
       <table className="w-full text-left text-[0.85rem]">
         <thead>
-          <tr className="border-b border-line bg-paper/60 text-[0.72rem] uppercase tracking-wider text-ink/45">
-            <th className="px-5 py-3 font-semibold">Subject</th>
-            <th className="px-4 py-3 font-semibold">Class</th>
-            <th className="px-4 py-3 font-semibold">Date & Time</th>
-            <th className="px-4 py-3 font-semibold">Marks</th>
-            <th className="px-4 py-3 font-semibold">Progress</th>
-            <th className="px-5 py-3 text-right font-semibold">Action</th>
+          <tr className="border-b border-line bg-paper/60 text-[0.7rem] uppercase tracking-[0.08em] text-ink/45">
+            <th className="px-5 py-3.5 font-bold">Subject</th>
+            <th className="px-4 py-3.5 font-bold">Class</th>
+            <th className="px-4 py-3.5 font-bold">Date & Time</th>
+            <th className="px-4 py-3.5 font-bold">Marks</th>
+            <th className="px-4 py-3.5 font-bold">Progress</th>
+            <th className="px-5 py-3.5 text-right font-bold">Action</th>
           </tr>
         </thead>
         <tbody>
           {schedules.length === 0 ? (
-            <tr><td colSpan={6} className="px-6 py-10 text-center text-ink/40">No papers have been scheduled for this exam.</td></tr>
+            <tr><td colSpan={6} className="px-6 py-12 text-center text-[0.86rem] text-ink/40">No papers have been scheduled for this exam.</td></tr>
           ) : schedules.map((schedule) => (
-            <tr key={schedule.id} className="border-b border-line/60 last:border-0 hover:bg-paper/50">
+            <tr key={schedule.id} className="group border-b border-line/60 transition-colors last:border-0 hover:bg-accent/[0.035]">
               <td className="px-5 py-3">
-                <p className="font-medium text-ink">{schedule.subject?.name ?? '—'}</p>
+                <p className="font-semibold text-ink">{schedule.subject?.name ?? '—'}</p>
                 <p className="text-[0.74rem] text-ink/45">{schedule.room || 'Room not assigned'}</p>
               </td>
               <td className="px-4 py-3 text-ink/65">
@@ -311,20 +309,23 @@ function ScheduleTable({
                   {schedule.start_time || 'Time pending'}{schedule.end_time ? ` - ${schedule.end_time}` : ''}
                 </p>
               </td>
-              <td className="px-4 py-3 text-ink/65">{schedule.max_marks} / pass {schedule.passing_marks}</td>
+              <td className="px-4 py-3 text-ink/65">
+                <span className="font-semibold text-ink/75">{schedule.max_marks}</span>
+                <span className="text-ink/40"> / pass {schedule.passing_marks}</span>
+              </td>
               <td className="px-4 py-3">
                 <StatusBadge status={schedule.status} />
                 <p className="mt-1 text-[0.72rem] text-ink/45">{schedule.submitted_marks_count} submitted</p>
               </td>
-              <td className="px-5 py-3 text-right">
+              <td className="px-5 py-3">
                 {canManage && (
-                  <div className="flex justify-end gap-3">
-                    <button type="button" onClick={() => onEdit(schedule)} className="text-[0.78rem] font-semibold text-ink/60 hover:text-accent">
-                      Edit
-                    </button>
-                    <button type="button" onClick={() => onDelete(schedule)} className="text-[0.78rem] font-semibold text-[#dc2626] hover:underline">
-                      Delete
-                    </button>
+                  <div className="flex items-center justify-end gap-1 opacity-80 transition-opacity group-hover:opacity-100">
+                    <RowAction label="Edit" onClick={() => onEdit(schedule)}>
+                      <EditIcon width={17} height={17} />
+                    </RowAction>
+                    <RowAction label="Delete" danger onClick={() => onDelete(schedule)}>
+                      <TrashIcon width={17} height={17} />
+                    </RowAction>
                   </div>
                 )}
               </td>
@@ -563,14 +564,3 @@ function ScheduleFormModal({
   )
 }
 
-function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div className="grid place-items-center rounded-2xl border border-line bg-white px-5 py-14 text-center">
-      <div>
-        <p className="text-[0.9rem] font-semibold text-ink">Unable to load exam data</p>
-        <p className="mt-1 text-[0.82rem] text-ink/50">{message}</p>
-        <button type="button" onClick={onRetry} className="mt-4 rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-white">Try again</button>
-      </div>
-    </div>
-  )
-}

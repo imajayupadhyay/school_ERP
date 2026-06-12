@@ -5,8 +5,8 @@ import { extractErrorMessage } from '@/lib/errors'
 import FormField, { inputClass } from '../../components/FormField'
 import Modal from '../../components/Modal'
 import StatusBadge from '../../components/StatusBadge'
-import { PlusIcon } from '../../components/icons'
-import { TabSkeleton, ErrorState } from './TabStates'
+import { EditIcon, LinkIcon, TrashIcon } from '../../components/icons'
+import { AddButton, EmptyRow, ErrorState, RowAction, TabSkeleton } from './TabStates'
 import {
   fetchSubjects,
   fetchClasses,
@@ -70,76 +70,91 @@ export default function SubjectsTab({ canEdit }: Props) {
     <div className="space-y-4">
       {canEdit && (
         <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={() => setSubjectModal('new')}
-            className="inline-flex items-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-accent-2"
-          >
-            <PlusIcon width={16} height={16} />
-            Add Subject
-          </button>
+          <AddButton label="Add Subject" onClick={() => setSubjectModal('new')} />
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-2xl border border-line bg-white">
+      <div className="overflow-x-auto rounded-2xl border border-line bg-white shadow-sm">
         <table className="w-full text-left text-[0.85rem]">
           <thead>
-            <tr className="border-b border-line bg-paper/60 text-[0.72rem] uppercase tracking-wider text-ink/45">
-              <th className="px-5 py-3 font-semibold">Subject</th>
-              <th className="px-4 py-3 font-semibold">Code</th>
-              <th className="px-4 py-3 font-semibold">Type</th>
-              <th className="px-4 py-3 font-semibold">Classes</th>
-              <th className="px-4 py-3 font-semibold">Status</th>
-              {canEdit && <th className="px-5 py-3 font-semibold text-right">Actions</th>}
+            <tr className="border-b border-line bg-paper/60 text-[0.7rem] uppercase tracking-[0.08em] text-ink/45">
+              <th className="px-5 py-3.5 font-bold">Subject</th>
+              <th className="px-4 py-3.5 font-bold">Code</th>
+              <th className="px-4 py-3.5 font-bold">Type</th>
+              <th className="px-4 py-3.5 font-bold">Classes</th>
+              <th className="px-4 py-3.5 font-bold">Status</th>
+              {canEdit && <th className="px-5 py-3.5 text-right font-bold">Actions</th>}
             </tr>
           </thead>
           <tbody>
             {subjects.length === 0 ? (
-              <tr>
-                <td colSpan={canEdit ? 6 : 5} className="px-6 py-10 text-center text-ink/40">
-                  No subjects yet.
-                </td>
-              </tr>
+              <EmptyRow colSpan={canEdit ? 6 : 5} message="No subjects yet." />
             ) : (
               subjects.map((subject) => (
-                <tr key={subject.id} className="border-b border-line/60 last:border-0 hover:bg-paper/50">
-                  <td className="px-5 py-3 font-medium text-ink">{subject.name}</td>
-                  <td className="px-4 py-3 text-ink/65">{subject.code ?? '—'}</td>
-                  <td className="px-4 py-3 capitalize text-ink/65">{subject.type}</td>
+                <tr
+                  key={subject.id}
+                  className="group border-b border-line/60 transition-colors last:border-0 hover:bg-accent/[0.035]"
+                >
+                  <td className="px-5 py-3 font-semibold text-ink">{subject.name}</td>
                   <td className="px-4 py-3 text-ink/65">
-                    {subject.classes.length === 0 ? '—' : subject.classes.map((c) => c.name).join(', ')}
+                    {subject.code ? (
+                      <span className="rounded-md bg-ink/[0.06] px-2 py-0.5 font-mono text-[0.78rem] text-ink/60">
+                        {subject.code}
+                      </span>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[0.7rem] font-bold capitalize ${
+                        subject.type === 'practical' ? 'bg-[#168a66]/10 text-[#168a66]' : 'bg-[#2c49a6]/10 text-[#2c49a6]'
+                      }`}
+                    >
+                      {subject.type}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-ink/65">
+                    {subject.classes.length === 0 ? (
+                      <span className="text-ink/35">Unassigned</span>
+                    ) : (
+                      <div className="flex flex-wrap gap-1.5">
+                        {subject.classes.slice(0, 3).map((c) => (
+                          <span key={c.id} className="rounded-full bg-paper-2 px-2.5 py-0.5 text-[0.72rem] font-semibold text-ink/60">
+                            {c.name}
+                          </span>
+                        ))}
+                        {subject.classes.length > 3 && (
+                          <span className="rounded-full bg-ink/5 px-2.5 py-0.5 text-[0.72rem] font-semibold text-ink/45">
+                            +{subject.classes.length - 3}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <StatusBadge status={subject.status} />
                   </td>
                   {canEdit && (
-                    <td className="px-5 py-3 text-right">
-                      <div className="flex justify-end gap-3">
-                        <button
-                          type="button"
-                          onClick={() => setAssignModal(subject)}
-                          className="text-[0.78rem] font-semibold text-ink/60 hover:text-accent"
-                        >
-                          Assign Classes
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setSubjectModal(subject)}
-                          className="text-[0.78rem] font-semibold text-ink/60 hover:text-accent"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
+                    <td className="px-5 py-3">
+                      <div className="flex items-center justify-end gap-1 opacity-80 transition-opacity group-hover:opacity-100">
+                        <RowAction label="Assign classes" onClick={() => setAssignModal(subject)}>
+                          <LinkIcon width={17} height={17} />
+                        </RowAction>
+                        <RowAction label="Edit" onClick={() => setSubjectModal(subject)}>
+                          <EditIcon width={17} height={17} />
+                        </RowAction>
+                        <RowAction
+                          label="Delete"
+                          danger
                           onClick={() => {
                             if (window.confirm(`Delete subject "${subject.name}"?`)) {
                               deleteMutation.mutate(subject.id)
                             }
                           }}
-                          className="text-[0.78rem] font-semibold text-[#dc2626] hover:underline"
                         >
-                          Delete
-                        </button>
+                          <TrashIcon width={17} height={17} />
+                        </RowAction>
                       </div>
                     </td>
                   )}

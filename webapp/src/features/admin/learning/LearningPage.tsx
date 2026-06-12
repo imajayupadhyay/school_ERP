@@ -2,17 +2,19 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/features/auth/AuthContext'
 import { fetchAcademicSessions, fetchClasses, fetchSubjects } from '../academic-setup/api'
+import { BookIcon, HomeworkIcon } from '../components/icons'
+import { PageHeader, SegmentedTabs, type TabDef } from '../components/PageHeader'
 import HomeworkTab from './components/HomeworkTab'
 import MaterialsTab from './components/MaterialsTab'
 
 const EDITOR_ROLES = ['school_admin', 'principal', 'super_admin', 'teacher']
 
-const TABS = [
-  { key: 'homework', label: 'Homework' },
-  { key: 'materials', label: 'Study Materials' },
-] as const
+type TabKey = 'homework' | 'materials'
 
-type TabKey = (typeof TABS)[number]['key']
+const TABS: TabDef<TabKey>[] = [
+  { key: 'homework', label: 'Homework', icon: HomeworkIcon },
+  { key: 'materials', label: 'Study Materials', icon: BookIcon },
+]
 
 export default function LearningPage() {
   const { user } = useAuth()
@@ -36,12 +38,11 @@ export default function LearningPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-[1.7rem] font-extrabold tracking-[-0.02em] text-ink">Homework & Study Material</h1>
-        <p className="mt-1 text-[0.92rem] text-ink/55">
-          Assign classwork, publish learning resources, and keep students aligned with the current lessons.
-        </p>
-      </div>
+      <PageHeader
+        icon={HomeworkIcon}
+        title="Homework & Study Material"
+        description="Assign classwork, publish learning resources, and keep students aligned with the current lessons."
+      />
 
       {!canEdit && (
         <div className="rounded-xl border border-line bg-paper-2/70 px-4 py-3 text-[0.85rem] text-ink/60">
@@ -49,22 +50,7 @@ export default function LearningPage() {
         </div>
       )}
 
-      <div className="flex gap-2 overflow-x-auto border-b border-line">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={`-mb-px whitespace-nowrap rounded-t-xl border-b-2 px-4 py-2.5 text-[0.88rem] font-semibold transition ${
-              activeTab === tab.key
-                ? 'border-accent text-accent'
-                : 'border-transparent text-ink/50 hover:text-ink'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <SegmentedTabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
 
       {activeTab === 'homework' && (
         <HomeworkTab

@@ -7,6 +7,8 @@ import { fetchSchoolProfile, updateSchoolProfile, uploadSchoolLogo } from './api
 import type { SchoolProfile, UpdateSchoolProfilePayload } from './types'
 import FormField, { inputClass } from '../components/FormField'
 import SectionCard from '../components/SectionCard'
+import { SettingsIcon } from '../components/icons'
+import { PageHeader } from '../components/PageHeader'
 import LogoUploader from './components/LogoUploader'
 
 const EDITOR_ROLES = ['school_admin', 'principal', 'super_admin']
@@ -77,12 +79,12 @@ export default function SchoolProfilePage() {
 
   if (isError || !data) {
     return (
-      <div className="grid place-items-center rounded-2xl border border-line bg-white py-20 text-center">
-        <p className="text-ink/70">We couldn't load the school profile.</p>
+      <div className="grid place-items-center rounded-2xl border border-line bg-white py-20 text-center shadow-sm">
+        <p className="font-semibold text-ink/75">We couldn’t load the school profile.</p>
         <button
           type="button"
           onClick={() => refetch()}
-          className="mt-4 rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-accent-2"
+          className="mt-4 rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_-8px_rgba(238,106,44,.7)] transition hover:bg-accent-2 hover:-translate-y-0.5"
         >
           Try again
         </button>
@@ -97,12 +99,11 @@ export default function SchoolProfilePage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-[1.7rem] font-extrabold tracking-[-0.02em] text-ink">School Profile</h1>
-        <p className="mt-1 text-[0.92rem] text-ink/55">
-          Manage your school's identity, contact details, and configuration.
-        </p>
-      </div>
+      <PageHeader
+        icon={SettingsIcon}
+        title="School Profile"
+        description="Manage your school's identity, contact details, and configuration."
+      />
 
       {!canEdit && (
         <div className="rounded-xl border border-line bg-paper-2/70 px-4 py-3 text-[0.85rem] text-ink/60">
@@ -323,22 +324,27 @@ export default function SchoolProfilePage() {
         </SectionCard>
 
         {canEdit && (
-          <div className="flex items-center justify-end gap-3">
-            <button
-              type="button"
-              onClick={() => data && reset(toFormValues(data))}
-              disabled={!isDirty || updateMutation.isPending}
-              className="rounded-xl border border-line bg-white px-5 py-2.5 text-sm font-semibold text-ink/70 transition hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Discard Changes
-            </button>
-            <button
-              type="submit"
-              disabled={!isDirty || updateMutation.isPending}
-              className="rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-accent-2 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {updateMutation.isPending ? 'Saving…' : 'Save Changes'}
-            </button>
+          <div className="sticky bottom-4 z-10 flex items-center justify-between gap-3 rounded-2xl border border-line bg-white/85 px-4 py-3 shadow-[0_18px_40px_-24px_rgba(19,28,61,.45)] backdrop-blur">
+            <span className="text-[0.82rem] font-medium text-ink/55">
+              {isDirty ? 'You have unsaved changes.' : 'All changes saved.'}
+            </span>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => data && reset(toFormValues(data))}
+                disabled={!isDirty || updateMutation.isPending}
+                className="rounded-xl border border-line bg-white px-5 py-2.5 text-sm font-semibold text-ink/70 transition hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Discard
+              </button>
+              <button
+                type="submit"
+                disabled={!isDirty || updateMutation.isPending}
+                className="rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_-8px_rgba(238,106,44,.7)] transition hover:bg-accent-2 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+              >
+                {updateMutation.isPending ? 'Saving…' : 'Save Changes'}
+              </button>
+            </div>
           </div>
         )}
       </form>
@@ -353,10 +359,10 @@ function toFormValues(profile: SchoolProfile): UpdateSchoolProfilePayload {
 
 function SchoolProfileSkeleton() {
   return (
-    <div className="animate-pulse space-y-6">
-      <div className="h-16 w-72 rounded-xl bg-ink/5" />
+    <div className="space-y-6">
+      <div className="h-[112px] animate-pulse rounded-2xl bg-ink/[0.06]" />
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="h-[180px] rounded-2xl bg-ink/5" />
+        <div key={i} className="h-[180px] animate-pulse rounded-2xl bg-ink/[0.05]" />
       ))}
     </div>
   )

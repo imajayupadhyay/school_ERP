@@ -19,7 +19,7 @@ export default function GenderDonut({ data }: Props) {
   let offset = 0
 
   return (
-    <div className="rounded-2xl border border-line bg-white p-5 md:p-6">
+    <div className="rounded-2xl border border-line bg-white p-5 shadow-sm md:p-6">
       <h3 className="text-[1.02rem] font-bold text-ink">Gender Distribution</h3>
       <p className="text-[0.78rem] text-ink/50">All enrolled students</p>
 

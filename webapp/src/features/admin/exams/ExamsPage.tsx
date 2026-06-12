@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/features/auth/AuthContext'
 import { fetchAcademicSessions, fetchClasses, fetchSubjects } from '../academic-setup/api'
+import { CalendarIcon, EditIcon, ExamsIcon, GraduationIcon } from '../components/icons'
+import { PageHeader, SegmentedTabs, type TabDef } from '../components/PageHeader'
 import ExamSetupTab from './components/ExamSetupTab'
 import MarksEntryTab from './components/MarksEntryTab'
 import ResultsTab from './components/ResultsTab'
@@ -9,13 +11,13 @@ import ResultsTab from './components/ResultsTab'
 const MANAGER_ROLES = ['school_admin', 'principal', 'super_admin']
 const MARKER_ROLES = [...MANAGER_ROLES, 'teacher']
 
-const TABS = [
-  { key: 'setup', label: 'Exams & Schedules' },
-  { key: 'marks', label: 'Marks Entry' },
-  { key: 'results', label: 'Results' },
-] as const
+type TabKey = 'setup' | 'marks' | 'results'
 
-type TabKey = (typeof TABS)[number]['key']
+const TABS: TabDef<TabKey>[] = [
+  { key: 'setup', label: 'Exams & Schedules', icon: CalendarIcon },
+  { key: 'marks', label: 'Marks Entry', icon: EditIcon },
+  { key: 'results', label: 'Results', icon: GraduationIcon },
+]
 
 export default function ExamsPage() {
   const { user } = useAuth()
@@ -40,12 +42,11 @@ export default function ExamsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-[1.7rem] font-extrabold tracking-[-0.02em] text-ink">Exams & Results</h1>
-        <p className="mt-1 text-[0.92rem] text-ink/55">
-          Schedule examinations, record subject marks, and publish class report cards.
-        </p>
-      </div>
+      <PageHeader
+        icon={ExamsIcon}
+        title="Exams & Results"
+        description="Schedule examinations, record subject marks, and publish class report cards."
+      />
 
       {!canManage && (
         <div className="rounded-xl border border-line bg-paper-2/70 px-4 py-3 text-[0.85rem] text-ink/60">
@@ -53,22 +54,7 @@ export default function ExamsPage() {
         </div>
       )}
 
-      <div className="flex gap-2 overflow-x-auto border-b border-line">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={`-mb-px whitespace-nowrap rounded-t-xl border-b-2 px-4 py-2.5 text-[0.88rem] font-semibold transition ${
-              activeTab === tab.key
-                ? 'border-accent text-accent'
-                : 'border-transparent text-ink/50 hover:text-ink'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <SegmentedTabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
 
       {activeTab === 'setup' && (
         <ExamSetupTab

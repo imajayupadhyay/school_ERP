@@ -4,6 +4,8 @@ import { extractErrorMessage } from '@/lib/errors'
 import type { SchoolClass } from '../../academic-setup/types'
 import { inputClass } from '../../components/FormField'
 import StatusBadge from '../../components/StatusBadge'
+import { CheckIcon, ChevronRightIcon, FilterIcon } from '../../components/icons'
+import { TableErrorState, TableSkeleton } from '../../components/TableUI'
 import { fetchExamSchedules, fetchExams, fetchMarkRoster, saveMarks } from '../api'
 import type { MarkAttendanceStatus, MarkRosterStudent } from '../types'
 
@@ -47,7 +49,11 @@ export default function MarksEntryTab({ classes, canEnterMarks, isSetupLoading }
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-line bg-white p-4">
+      <div className="rounded-2xl border border-line bg-white p-4 shadow-sm">
+        <div className="mb-3 flex items-center gap-2 text-[0.8rem] font-semibold text-ink/55">
+          <FilterIcon width={16} height={16} className="text-accent" />
+          Select paper
+        </div>
         <div className="grid gap-3 lg:grid-cols-[minmax(190px,1fr)_minmax(160px,1fr)_150px]">
           <select
             value={examId}
@@ -97,44 +103,57 @@ export default function MarksEntryTab({ classes, canEnterMarks, isSetupLoading }
       {!examId ? (
         <EmptyState text="Select an exam to load the papers assigned to you." />
       ) : schedulesQuery.isLoading ? (
-        <div className="h-56 animate-pulse rounded-2xl bg-ink/5" />
+        <TableSkeleton rows={4} />
       ) : schedulesQuery.isError ? (
-        <ErrorState message={extractErrorMessage(schedulesQuery.error)} onRetry={() => schedulesQuery.refetch()} />
+        <TableErrorState message={extractErrorMessage(schedulesQuery.error)} onRetry={() => schedulesQuery.refetch()} />
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-line bg-white">
+        <div className="overflow-x-auto rounded-2xl border border-line bg-white shadow-sm">
           <table className="w-full text-left text-[0.85rem]">
             <thead>
-              <tr className="border-b border-line bg-paper/60 text-[0.72rem] uppercase tracking-wider text-ink/45">
-                <th className="px-5 py-3 font-semibold">Paper</th>
-                <th className="px-4 py-3 font-semibold">Class</th>
-                <th className="px-4 py-3 font-semibold">Date</th>
-                <th className="px-4 py-3 font-semibold">Marks</th>
-                <th className="px-5 py-3 text-right font-semibold">Action</th>
+              <tr className="border-b border-line bg-paper/60 text-[0.7rem] uppercase tracking-[0.08em] text-ink/45">
+                <th className="px-5 py-3.5 font-bold">Paper</th>
+                <th className="px-4 py-3.5 font-bold">Class</th>
+                <th className="px-4 py-3.5 font-bold">Date</th>
+                <th className="px-4 py-3.5 font-bold">Marks</th>
+                <th className="px-5 py-3.5 text-right font-bold">Action</th>
               </tr>
             </thead>
             <tbody>
               {schedules.length === 0 ? (
-                <tr><td colSpan={5} className="px-6 py-10 text-center text-ink/40">No assigned papers match these filters.</td></tr>
-              ) : schedules.map((schedule) => (
-                  <tr key={schedule.id} className={`border-b border-line/60 last:border-0 hover:bg-paper/50 ${activeScheduleId === schedule.id ? 'bg-accent/[0.045]' : ''}`}>
+                <tr><td colSpan={5} className="px-6 py-12 text-center text-[0.86rem] text-ink/40">No assigned papers match these filters.</td></tr>
+              ) : schedules.map((schedule) => {
+                const isActive = activeScheduleId === schedule.id
+                return (
+                  <tr key={schedule.id} className={`group border-b border-line/60 transition-colors last:border-0 ${isActive ? 'bg-accent/[0.06]' : 'hover:bg-accent/[0.035]'}`}>
                   <td className="px-5 py-3">
-                    <p className="font-medium text-ink">{schedule.subject?.name ?? '—'}</p>
-                    <p className="text-[0.74rem] text-ink/45">{schedule.start_time || 'Time pending'}</p>
+                    <div className="flex items-center gap-2.5">
+                      <span className={`h-8 w-1 shrink-0 rounded-full transition ${isActive ? 'bg-accent' : 'bg-transparent'}`} />
+                      <div>
+                        <p className="font-semibold text-ink">{schedule.subject?.name ?? '—'}</p>
+                        <p className="text-[0.74rem] text-ink/45">{schedule.start_time || 'Time pending'}</p>
+                      </div>
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-ink/65">{schedule.class?.name}{schedule.section ? ` · ${schedule.section.name}` : ' · All sections'}</td>
                   <td className="px-4 py-3 text-ink/65">{schedule.exam_date}</td>
-                  <td className="px-4 py-3 text-ink/65">{schedule.max_marks} total · {schedule.submitted_marks_count} submitted</td>
-                  <td className="px-5 py-3 text-right">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedScheduleId(schedule.id)}
-                      className="rounded-lg border border-line px-3 py-1.5 text-[0.78rem] font-semibold text-ink/65 transition hover:border-accent hover:text-accent"
-                    >
-                      Open Roster
-                    </button>
+                  <td className="px-4 py-3 text-ink/65">
+                    <span className="font-semibold text-ink/75">{schedule.max_marks}</span> total ·{' '}
+                    <span className="font-semibold text-[#168a66]">{schedule.submitted_marks_count}</span> submitted
+                  </td>
+                  <td className="px-5 py-3">
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedScheduleId(schedule.id)}
+                        className="inline-flex items-center gap-1 rounded-lg border border-line bg-white px-3 py-1.5 text-[0.78rem] font-semibold text-ink/65 transition hover:border-accent hover:bg-accent/5 hover:text-accent"
+                      >
+                        Open Roster
+                        <ChevronRightIcon width={15} height={15} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
-              ))}
+              )})}
             </tbody>
           </table>
         </div>
@@ -142,9 +161,9 @@ export default function MarksEntryTab({ classes, canEnterMarks, isSetupLoading }
 
       {activeScheduleId !== null && (
         rosterQuery.isLoading ? (
-          <div className="h-80 animate-pulse rounded-2xl bg-ink/5" />
+          <div className="h-80 animate-pulse rounded-2xl bg-ink/[0.05]" />
         ) : rosterQuery.isError ? (
-          <ErrorState message={extractErrorMessage(rosterQuery.error)} onRetry={() => rosterQuery.refetch()} />
+          <TableErrorState message={extractErrorMessage(rosterQuery.error)} onRetry={() => rosterQuery.refetch()} />
         ) : rosterQuery.data ? (
           <MarksRoster
             key={`${activeScheduleId}-${rosterQuery.dataUpdatedAt}`}
@@ -196,8 +215,8 @@ function MarksRoster({
   }
 
   return (
-    <div className="rounded-2xl border border-line bg-white">
-      <div className="flex flex-col gap-3 border-b border-line px-5 py-4 sm:flex-row sm:items-center">
+    <div className="overflow-hidden rounded-2xl border border-line bg-white shadow-sm">
+      <div className="flex flex-col gap-3 border-b border-line bg-paper/40 px-5 py-4 sm:flex-row sm:items-center">
         <div>
           <p className="font-bold text-ink">{roster.schedule.subject?.name} · {roster.schedule.class?.name}{roster.schedule.section ? ` ${roster.schedule.section.name}` : ''}</p>
           <p className="mt-0.5 text-[0.78rem] text-ink/45">{records.length} students · {submittedCount} submitted · Maximum {maxMarks}</p>
@@ -214,20 +233,20 @@ function MarksRoster({
       <div className="overflow-x-auto">
         <table className="w-full text-left text-[0.85rem]">
           <thead>
-            <tr className="border-b border-line bg-paper/60 text-[0.72rem] uppercase tracking-wider text-ink/45">
-              <th className="px-5 py-3 font-semibold">Student</th>
-              <th className="px-4 py-3 font-semibold">Attendance</th>
-              <th className="px-4 py-3 font-semibold">Marks</th>
-              <th className="px-5 py-3 font-semibold">Remarks</th>
+            <tr className="border-b border-line bg-paper/60 text-[0.7rem] uppercase tracking-[0.08em] text-ink/45">
+              <th className="px-5 py-3.5 font-bold">Student</th>
+              <th className="px-4 py-3.5 font-bold">Attendance</th>
+              <th className="px-4 py-3.5 font-bold">Marks</th>
+              <th className="px-5 py-3.5 font-bold">Remarks</th>
             </tr>
           </thead>
           <tbody>
             {records.length === 0 ? (
-              <tr><td colSpan={4} className="px-6 py-10 text-center text-ink/40">No active students found for this roster.</td></tr>
+              <tr><td colSpan={4} className="px-6 py-12 text-center text-[0.86rem] text-ink/40">No active students found for this roster.</td></tr>
             ) : records.map((record) => (
-              <tr key={record.student_id} className="border-b border-line/60 last:border-0 hover:bg-paper/50">
+              <tr key={record.student_id} className="group border-b border-line/60 transition-colors last:border-0 hover:bg-accent/[0.035]">
                 <td className="px-5 py-3">
-                  <p className="font-medium text-ink">{record.full_name}</p>
+                  <p className="font-semibold text-ink">{record.full_name}</p>
                   <p className="text-[0.74rem] text-ink/45">{record.admission_no ?? 'No admission no'} · Roll {record.roll_no ?? '—'}</p>
                 </td>
                 <td className="px-4 py-3">
@@ -278,12 +297,12 @@ function MarksRoster({
       </div>
 
       {formError && <p className="border-t border-line px-5 py-3 text-[0.82rem] font-medium text-[#dc2626]">{formError}</p>}
-      <div className="flex flex-col gap-2 border-t border-line px-5 py-4 sm:flex-row sm:justify-end">
+      <div className="flex flex-col gap-2 border-t border-line bg-paper/40 px-5 py-4 sm:flex-row sm:justify-end">
         <button
           type="button"
           onClick={() => saveMutation.mutate('draft')}
           disabled={!canEnterMarks || roster.is_locked || records.length === 0 || saveMutation.isPending}
-          className="rounded-xl border border-line px-4 py-2.5 text-sm font-semibold text-ink/65 disabled:opacity-45"
+          className="rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-semibold text-ink/65 transition hover:border-accent hover:text-accent disabled:opacity-45"
         >
           Save Draft
         </button>
@@ -291,9 +310,10 @@ function MarksRoster({
           type="button"
           onClick={() => saveMutation.mutate('submitted')}
           disabled={!canEnterMarks || roster.is_locked || records.length === 0 || saveMutation.isPending}
-          className="rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-45"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_-8px_rgba(238,106,44,.7)] transition hover:bg-accent-2 hover:-translate-y-0.5 disabled:opacity-45 disabled:hover:translate-y-0"
         >
-          {saveMutation.isPending ? 'Saving...' : 'Submit Marks'}
+          <CheckIcon width={16} height={16} />
+          {saveMutation.isPending ? 'Saving…' : 'Submit Marks'}
         </button>
       </div>
     </div>
@@ -301,17 +321,5 @@ function MarksRoster({
 }
 
 function EmptyState({ text }: { text: string }) {
-  return <div className="rounded-2xl border border-line bg-white px-5 py-12 text-center text-[0.9rem] text-ink/45">{text}</div>
-}
-
-function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div className="grid place-items-center rounded-2xl border border-line bg-white px-5 py-12 text-center">
-      <div>
-        <p className="text-[0.9rem] font-semibold text-ink">Unable to load marks data</p>
-        <p className="mt-1 text-[0.82rem] text-ink/50">{message}</p>
-        <button type="button" onClick={onRetry} className="mt-4 rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-white">Try again</button>
-      </div>
-    </div>
-  )
+  return <div className="rounded-2xl border border-dashed border-line bg-white px-5 py-12 text-center text-[0.9rem] text-ink/45 shadow-sm">{text}</div>
 }

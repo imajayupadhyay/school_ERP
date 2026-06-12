@@ -6,6 +6,8 @@ import type { AcademicSession, SchoolClass, Subject } from '../../academic-setup
 import FormField, { inputClass } from '../../components/FormField'
 import Modal from '../../components/Modal'
 import StatusBadge from '../../components/StatusBadge'
+import { ArchiveIcon, ChevronLeftIcon, ChevronRightIcon, DownloadIcon, EditIcon, FilterIcon, SearchIcon } from '../../components/icons'
+import { AddButton, RowAction, TableErrorState, TableSkeleton } from '../../components/TableUI'
 import {
   archiveHomework,
   createHomework,
@@ -103,19 +105,38 @@ export default function HomeworkTab({ academicSessions, classes, subjects, canEd
     setPage(1)
   }
 
+  const activeFilters = [search, classId, sectionId, subjectId, status].filter(Boolean).length
+
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-line bg-white p-4">
-        <div className="grid gap-3 lg:grid-cols-[minmax(180px,1fr)_minmax(150px,1fr)_140px_150px_140px_auto]">
-          <input
-            value={search}
-            onChange={(event) => {
-              setSearch(event.target.value)
-              setPage(1)
-            }}
-            className={inputClass}
-            placeholder="Search homework"
-          />
+      <div className="rounded-2xl border border-line bg-white p-4 shadow-sm">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-[0.8rem] font-semibold text-ink/55">
+            <FilterIcon width={16} height={16} className="text-accent" />
+            Filters
+            {activeFilters > 0 && (
+              <span className="rounded-full bg-accent/12 px-2 py-0.5 text-[0.7rem] font-bold text-accent">{activeFilters} active</span>
+            )}
+          </div>
+          {activeFilters > 0 && (
+            <button type="button" onClick={resetFilters} className="text-[0.78rem] font-semibold text-ink/45 transition hover:text-accent">
+              Clear all
+            </button>
+          )}
+        </div>
+        <div className="grid gap-3 lg:grid-cols-[minmax(180px,1fr)_minmax(150px,1fr)_140px_150px_140px]">
+          <label className="relative">
+            <SearchIcon className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink/35" width={17} height={17} />
+            <input
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value)
+                setPage(1)
+              }}
+              className={`${inputClass} pl-9`}
+              placeholder="Search homework"
+            />
+          </label>
           <select
             value={classId}
             onChange={(event) => {
@@ -182,70 +203,52 @@ export default function HomeworkTab({ academicSessions, classes, subjects, canEd
             <option value="draft">Draft</option>
             <option value="archived">Archived</option>
           </select>
-          <button
-            type="button"
-            onClick={resetFilters}
-            className="rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-semibold text-ink/65 transition hover:border-accent hover:text-accent"
-          >
-            Reset
-          </button>
         </div>
       </div>
 
       <div className="flex items-center justify-between gap-3">
         <p className="text-[0.9rem] text-ink/55">Publish assignments for a class, section, and subject.</p>
         {canEdit && (
-          <button
-            type="button"
+          <AddButton
+            label="Add Homework"
             onClick={() => {
               setModal('new')
               setModalError(null)
             }}
-            className="shrink-0 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-accent-2"
-          >
-            Add Homework
-          </button>
+          />
         )}
       </div>
 
       {isLoading ? (
-        <div className="h-80 animate-pulse rounded-2xl bg-ink/5" />
+        <TableSkeleton rows={6} />
       ) : isError ? (
-        <div className="grid place-items-center rounded-2xl border border-line bg-white px-5 py-14">
-          <div className="text-center">
-            <p className="text-[0.9rem] font-semibold text-ink">Unable to load homework</p>
-            <p className="mt-1 text-[0.82rem] text-ink/50">{extractErrorMessage(error)}</p>
-            <button onClick={() => refetch()} className="mt-4 rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-white">
-              Try again
-            </button>
-          </div>
-        </div>
+        <TableErrorState message={extractErrorMessage(error)} onRetry={() => refetch()} />
       ) : (
         <>
-          <div className="overflow-x-auto rounded-2xl border border-line bg-white">
+          <div className="overflow-x-auto rounded-2xl border border-line bg-white shadow-sm">
             <table className="w-full text-left text-[0.85rem]">
               <thead>
-                <tr className="border-b border-line bg-paper/60 text-[0.72rem] uppercase tracking-wider text-ink/45">
-                  <th className="px-5 py-3 font-semibold">Homework</th>
-                  <th className="px-4 py-3 font-semibold">Class</th>
-                  <th className="px-4 py-3 font-semibold">Subject</th>
-                  <th className="px-4 py-3 font-semibold">Due</th>
-                  <th className="px-4 py-3 font-semibold">Status</th>
-                  <th className="px-5 py-3 text-right font-semibold">Action</th>
+                <tr className="border-b border-line bg-paper/60 text-[0.7rem] uppercase tracking-[0.08em] text-ink/45">
+                  <th className="px-5 py-3.5 font-bold">Homework</th>
+                  <th className="px-4 py-3.5 font-bold">Class</th>
+                  <th className="px-4 py-3.5 font-bold">Subject</th>
+                  <th className="px-4 py-3.5 font-bold">Due</th>
+                  <th className="px-4 py-3.5 font-bold">Status</th>
+                  <th className="px-5 py-3.5 text-right font-bold">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-10 text-center text-ink/40">
+                    <td colSpan={6} className="px-6 py-12 text-center text-[0.86rem] text-ink/40">
                       No homework matches the current filters.
                     </td>
                   </tr>
                 ) : (
                   rows.map((homework) => (
-                    <tr key={homework.id} className="border-b border-line/60 last:border-0 hover:bg-paper/50">
+                    <tr key={homework.id} className="group border-b border-line/60 transition-colors last:border-0 hover:bg-accent/[0.035]">
                       <td className="px-5 py-3">
-                        <p className="font-medium text-ink">{homework.title}</p>
+                        <p className="font-semibold text-ink">{homework.title}</p>
                         <p className="text-[0.74rem] text-ink/45">
                           Assigned {homework.assigned_date}
                           {homework.attachment_url ? ' · Attachment' : ''}
@@ -255,47 +258,52 @@ export default function HomeworkTab({ academicSessions, classes, subjects, canEd
                         {homework.class?.name ?? '—'}
                         {homework.section ? ` · ${homework.section.name}` : ''}
                       </td>
-                      <td className="px-4 py-3 text-ink/65">{homework.subject?.name ?? 'General'}</td>
+                      <td className="px-4 py-3">
+                        <span className="rounded-full bg-ink/[0.06] px-2.5 py-0.5 text-[0.74rem] font-semibold text-ink/60">
+                          {homework.subject?.name ?? 'General'}
+                        </span>
+                      </td>
                       <td className={`px-4 py-3 ${homework.is_overdue ? 'font-semibold text-[#dc2626]' : 'text-ink/65'}`}>
                         {homework.due_date ?? '—'}
                       </td>
                       <td className="px-4 py-3">
                         <StatusBadge status={homework.is_overdue ? 'overdue' : homework.status} />
                       </td>
-                      <td className="px-5 py-3 text-right">
-                        <div className="flex justify-end gap-3">
+                      <td className="px-5 py-3">
+                        <div className="flex items-center justify-end gap-1 opacity-80 transition-opacity group-hover:opacity-100">
                           {homework.attachment_url && (
                             <a
                               href={homework.attachment_url}
                               target="_blank"
                               rel="noreferrer"
-                              className="text-[0.78rem] font-semibold text-ink/60 hover:text-accent"
+                              title="Open attachment"
+                              aria-label="Open attachment"
+                              className="grid h-8 w-8 place-items-center rounded-lg bg-[#2c49a6]/12 text-[#2c49a6] transition hover:scale-110 hover:bg-[#2c49a6]/22"
                             >
-                              File
+                              <DownloadIcon width={17} height={17} />
                             </a>
                           )}
                           {canEdit && (
                             <>
-                              <button
-                                type="button"
+                              <RowAction
+                                label="Edit"
                                 onClick={() => {
                                   setModal(homework)
                                   setModalError(null)
                                 }}
-                                className="text-[0.78rem] font-semibold text-ink/60 hover:text-accent"
                               >
-                                Edit
-                              </button>
+                                <EditIcon width={17} height={17} />
+                              </RowAction>
                               {homework.status !== 'archived' && (
-                                <button
-                                  type="button"
+                                <RowAction
+                                  label="Archive"
+                                  danger
                                   onClick={() => {
                                     if (window.confirm(`Archive homework "${homework.title}"?`)) archiveMutation.mutate(homework.id)
                                   }}
-                                  className="text-[0.78rem] font-semibold text-[#dc2626] hover:underline"
                                 >
-                                  Archive
-                                </button>
+                                  <ArchiveIcon width={17} height={17} />
+                                </RowAction>
                               )}
                             </>
                           )}
@@ -309,26 +317,30 @@ export default function HomeworkTab({ academicSessions, classes, subjects, canEd
           </div>
 
           {meta && (
-            <div className="flex items-center gap-2 rounded-2xl border border-line bg-white px-4 py-3 text-[0.84rem] text-ink/55">
+            <div className="flex items-center gap-2 rounded-2xl border border-line bg-white px-4 py-3 text-[0.84rem] text-ink/55 shadow-sm">
               <span>
-                Showing {meta.from ?? 0}-{meta.to ?? 0} of {meta.total}
+                Showing <span className="font-semibold text-ink/75">{meta.from ?? 0}–{meta.to ?? 0}</span> of{' '}
+                <span className="font-semibold text-ink/75">{meta.total}</span>
               </span>
-              <div className="ml-auto flex gap-2">
+              <div className="ml-auto flex items-center gap-2">
                 <button
                   type="button"
                   disabled={page <= 1}
                   onClick={() => setPage((current) => Math.max(current - 1, 1))}
-                  className="rounded-xl border border-line bg-white px-4 py-2 font-semibold text-ink/65 transition hover:border-accent hover:text-accent disabled:opacity-40"
+                  className="inline-flex items-center gap-1 rounded-xl border border-line bg-white px-3 py-2 font-semibold text-ink/65 transition hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-line disabled:hover:text-ink/65"
                 >
-                  Previous
+                  <ChevronLeftIcon width={16} height={16} />
+                  Prev
                 </button>
+                <span className="px-2 text-[0.8rem] font-semibold text-ink/45">{meta.current_page} / {meta.last_page}</span>
                 <button
                   type="button"
                   disabled={page >= meta.last_page}
                   onClick={() => setPage((current) => Math.min(current + 1, meta.last_page))}
-                  className="rounded-xl border border-line bg-white px-4 py-2 font-semibold text-ink/65 transition hover:border-accent hover:text-accent disabled:opacity-40"
+                  className="inline-flex items-center gap-1 rounded-xl border border-line bg-white px-3 py-2 font-semibold text-ink/65 transition hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-line disabled:hover:text-ink/65"
                 >
                   Next
+                  <ChevronRightIcon width={16} height={16} />
                 </button>
               </div>
             </div>

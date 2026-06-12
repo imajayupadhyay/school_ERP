@@ -5,8 +5,8 @@ import { extractErrorMessage } from '@/lib/errors'
 import FormField, { inputClass } from '../../components/FormField'
 import Modal from '../../components/Modal'
 import StatusBadge from '../../components/StatusBadge'
-import { PlusIcon, ChevronDownIcon } from '../../components/icons'
-import { TabSkeleton, ErrorState } from './TabStates'
+import { ChevronDownIcon, EditIcon, PlusIcon, SectionsIcon, TrashIcon } from '../../components/icons'
+import { AddButton, EmptyRow, ErrorState, RowAction, TabSkeleton } from './TabStates'
 import {
   fetchClasses,
   createClass,
@@ -79,35 +79,24 @@ export default function ClassesTab({ canEdit }: Props) {
     <div className="space-y-4">
       {canEdit && (
         <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={() => setClassModal('new')}
-            className="inline-flex items-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-accent-2"
-          >
-            <PlusIcon width={16} height={16} />
-            Add Class
-          </button>
+          <AddButton label="Add Class" onClick={() => setClassModal('new')} />
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-2xl border border-line bg-white">
+      <div className="overflow-x-auto rounded-2xl border border-line bg-white shadow-sm">
         <table className="w-full text-left text-[0.85rem]">
           <thead>
-            <tr className="border-b border-line bg-paper/60 text-[0.72rem] uppercase tracking-wider text-ink/45">
-              <th className="px-5 py-3 font-semibold">Class</th>
-              <th className="px-4 py-3 font-semibold">Sections</th>
-              <th className="px-4 py-3 font-semibold">Subjects</th>
-              <th className="px-4 py-3 font-semibold">Status</th>
-              {canEdit && <th className="px-5 py-3 font-semibold text-right">Actions</th>}
+            <tr className="border-b border-line bg-paper/60 text-[0.7rem] uppercase tracking-[0.08em] text-ink/45">
+              <th className="px-5 py-3.5 font-bold">Class</th>
+              <th className="px-4 py-3.5 font-bold">Sections</th>
+              <th className="px-4 py-3.5 font-bold">Subjects</th>
+              <th className="px-4 py-3.5 font-bold">Status</th>
+              {canEdit && <th className="px-5 py-3.5 text-right font-bold">Actions</th>}
             </tr>
           </thead>
           <tbody>
             {classes.length === 0 ? (
-              <tr>
-                <td colSpan={canEdit ? 5 : 4} className="px-6 py-10 text-center text-ink/40">
-                  No classes yet.
-                </td>
-              </tr>
+              <EmptyRow colSpan={canEdit ? 5 : 4} message="No classes yet." />
             ) : (
               classes.map((schoolClass) => (
                 <ClassRow
@@ -193,35 +182,43 @@ function ClassRow({
 }) {
   return (
     <>
-      <tr className="border-b border-line/60 hover:bg-paper/50">
+      <tr
+        className={`group border-b border-line/60 transition-colors ${expanded ? 'bg-accent/[0.04]' : 'hover:bg-accent/[0.035]'}`}
+      >
         <td className="px-5 py-3">
-          <button type="button" onClick={onToggle} className="flex items-center gap-2 font-medium text-ink">
-            <ChevronDownIcon
-              width={16}
-              height={16}
-              className={`shrink-0 text-ink/40 transition-transform ${expanded ? 'rotate-180' : ''}`}
-            />
+          <button type="button" onClick={onToggle} className="flex items-center gap-2.5 font-semibold text-ink">
+            <span
+              className={`grid h-6 w-6 place-items-center rounded-md transition ${
+                expanded ? 'bg-accent/15 text-accent' : 'bg-[#2c49a6]/10 text-[#2c49a6] group-hover:bg-[#2c49a6]/18'
+              }`}
+            >
+              <ChevronDownIcon
+                width={15}
+                height={15}
+                className={`shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`}
+              />
+            </span>
             {schoolClass.name}
           </button>
         </td>
-        <td className="px-4 py-3 text-ink/65">{schoolClass.sections.length}</td>
-        <td className="px-4 py-3 text-ink/65">{schoolClass.subjects.length}</td>
+        <td className="px-4 py-3">
+          <CountPill value={schoolClass.sections.length} label="section" />
+        </td>
+        <td className="px-4 py-3">
+          <CountPill value={schoolClass.subjects.length} label="subject" />
+        </td>
         <td className="px-4 py-3">
           <StatusBadge status={schoolClass.status} />
         </td>
         {canEdit && (
-          <td className="px-5 py-3 text-right">
-            <div className="flex justify-end gap-3">
-              <button type="button" onClick={onEdit} className="text-[0.78rem] font-semibold text-ink/60 hover:text-accent">
-                Edit
-              </button>
-              <button
-                type="button"
-                onClick={onDelete}
-                className="text-[0.78rem] font-semibold text-[#dc2626] hover:underline"
-              >
-                Delete
-              </button>
+          <td className="px-5 py-3">
+            <div className="flex items-center justify-end gap-1 opacity-80 transition-opacity group-hover:opacity-100">
+              <RowAction label="Edit" onClick={onEdit}>
+                <EditIcon width={17} height={17} />
+              </RowAction>
+              <RowAction label="Delete" danger onClick={onDelete}>
+                <TrashIcon width={17} height={17} />
+              </RowAction>
             </div>
           </td>
         )}
@@ -230,12 +227,15 @@ function ClassRow({
         <tr className="border-b border-line/60 bg-paper/40">
           <td colSpan={canEdit ? 5 : 4} className="px-5 py-4 sm:px-8">
             <div className="flex items-center justify-between">
-              <h4 className="text-[0.8rem] font-semibold uppercase tracking-wider text-ink/45">Sections</h4>
+              <h4 className="flex items-center gap-2 text-[0.78rem] font-bold uppercase tracking-[0.08em] text-ink/45">
+                <SectionsIcon width={15} height={15} className="text-accent" />
+                Sections
+              </h4>
               {canEdit && (
                 <button
                   type="button"
                   onClick={onAddSection}
-                  className="inline-flex items-center gap-1.5 text-[0.78rem] font-semibold text-accent hover:underline"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-white px-2.5 py-1.5 text-[0.76rem] font-semibold text-ink/60 transition hover:border-accent hover:text-accent"
                 >
                   <PlusIcon width={14} height={14} />
                   Add Section
@@ -244,37 +244,36 @@ function ClassRow({
             </div>
 
             {schoolClass.sections.length === 0 ? (
-              <p className="mt-2 text-[0.82rem] text-ink/40">No sections yet.</p>
+              <p className="mt-3 rounded-xl border border-dashed border-line bg-white/60 px-4 py-3 text-[0.82rem] text-ink/40">
+                No sections yet.
+              </p>
             ) : (
-              <ul className="mt-3 space-y-2">
+              <ul className="mt-3 grid gap-2 sm:grid-cols-2">
                 {schoolClass.sections.map((section) => (
                   <li
                     key={section.id}
-                    className="flex items-center justify-between rounded-xl border border-line bg-white px-4 py-2.5"
+                    className="flex items-center justify-between rounded-xl border border-line bg-white px-4 py-2.5 transition hover:border-accent/30"
                   >
-                    <div className="flex items-center gap-3">
-                      <span className="font-medium text-ink">Section {section.name}</span>
-                      {section.capacity != null && (
-                        <span className="text-[0.78rem] text-ink/50">Capacity: {section.capacity}</span>
-                      )}
+                    <div className="flex items-center gap-2.5">
+                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-paper-2 text-[0.78rem] font-bold text-ink/60">
+                        {section.name}
+                      </span>
+                      <div>
+                        <div className="text-[0.84rem] font-semibold text-ink">Section {section.name}</div>
+                        {section.capacity != null && (
+                          <div className="text-[0.72rem] text-ink/45">Capacity {section.capacity}</div>
+                        )}
+                      </div>
                       <StatusBadge status={section.status} />
                     </div>
                     {canEdit && (
-                      <div className="flex gap-3">
-                        <button
-                          type="button"
-                          onClick={() => onEditSection(section)}
-                          className="text-[0.78rem] font-semibold text-ink/60 hover:text-accent"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onDeleteSection(section)}
-                          className="text-[0.78rem] font-semibold text-[#dc2626] hover:underline"
-                        >
-                          Delete
-                        </button>
+                      <div className="flex items-center gap-1">
+                        <RowAction label="Edit section" onClick={() => onEditSection(section)}>
+                          <EditIcon width={16} height={16} />
+                        </RowAction>
+                        <RowAction label="Delete section" danger onClick={() => onDeleteSection(section)}>
+                          <TrashIcon width={16} height={16} />
+                        </RowAction>
                       </div>
                     )}
                   </li>
@@ -284,7 +283,9 @@ function ClassRow({
 
             {schoolClass.subjects.length > 0 && (
               <div className="mt-4">
-                <h4 className="text-[0.8rem] font-semibold uppercase tracking-wider text-ink/45">Assigned Subjects</h4>
+                <h4 className="flex items-center gap-2 text-[0.78rem] font-bold uppercase tracking-[0.08em] text-ink/45">
+                  Assigned Subjects
+                </h4>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {schoolClass.subjects.map((subject) => (
                     <span
@@ -301,6 +302,18 @@ function ClassRow({
         </tr>
       )}
     </>
+  )
+}
+
+function CountPill({ value, label }: { value: number; label: string }) {
+  if (value === 0) {
+    return <span className="text-[0.8rem] text-ink/35">None</span>
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-ink/[0.06] px-2.5 py-0.5 text-[0.76rem] font-semibold text-ink/60">
+      <span className="text-ink/80">{value}</span>
+      {value === 1 ? label : `${label}s`}
+    </span>
   )
 }
 

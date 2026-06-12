@@ -8,7 +8,20 @@ import { extractErrorMessage } from '@/lib/errors'
 import FormField, { inputClass } from '../components/FormField'
 import Modal from '../components/Modal'
 import StatusBadge from '../components/StatusBadge'
-import { PlusIcon, SearchIcon } from '../components/icons'
+import { RowAction } from '../components/TableUI'
+import {
+  ArchiveIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  EditIcon,
+  EyeIcon,
+  FilterIcon,
+  KeyIcon,
+  LinkIcon,
+  ParentsIcon,
+  PlusIcon,
+  SearchIcon,
+} from '../components/icons'
 import {
   archiveGuardian,
   createGuardian,
@@ -116,12 +129,27 @@ export default function GuardianPage() {
   if (!canManage) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-[1.7rem] font-extrabold tracking-[-0.02em] text-ink">Parents & Guardians</h1>
-          <p className="mt-1 text-[0.92rem] text-ink/55">Parent contact and portal access records.</p>
+        <div className="relative overflow-hidden rounded-2xl border border-line bg-gradient-to-br from-ink to-ink-soft px-6 py-6 text-paper shadow-[0_18px_40px_-24px_rgba(19,28,61,.55)]">
+          <div className="pointer-events-none absolute -right-10 -top-12 h-44 w-44 rounded-full bg-accent/20 blur-2xl" />
+          <div className="relative flex items-start gap-4">
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-paper/10 text-paper ring-1 ring-paper/15 backdrop-blur">
+              <ParentsIcon width={24} height={24} />
+            </span>
+            <div>
+              <h1 className="text-[1.7rem] font-extrabold leading-tight tracking-[-0.02em]">Parents &amp; Guardians</h1>
+              <p className="mt-1 text-[0.9rem] text-paper/65">Parent contact and portal access records.</p>
+            </div>
+          </div>
         </div>
-        <div className="rounded-2xl border border-line bg-white px-5 py-8 text-ink/60">
-          You do not have permission to view parent and guardian contact records.
+        <div className="grid place-items-center rounded-2xl border border-dashed border-line bg-white py-16 text-center shadow-sm">
+          <span className="grid h-16 w-16 place-items-center rounded-2xl bg-ink/5 text-ink/40">
+            <KeyIcon width={28} height={28} />
+          </span>
+          <h3 className="mt-4 text-[1.05rem] font-bold text-ink">Access restricted</h3>
+          <p className="mt-1 max-w-sm text-[0.86rem] text-ink/50">
+            You do not have permission to view parent and guardian contact records. Contact your school admin or
+            principal.
+          </p>
         </div>
       </div>
     )
@@ -130,28 +158,74 @@ export default function GuardianPage() {
   const guardians = data?.items ?? []
   const meta = data?.meta
 
+  const activeFilters = [search, status, portalStatus].filter(Boolean).length
+  const resetFilters = () => {
+    setSearch('')
+    setStatus('')
+    setPortalStatus('')
+    setPage(1)
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h1 className="text-[1.7rem] font-extrabold tracking-[-0.02em] text-ink">Parents & Guardians</h1>
-          <p className="mt-1 text-[0.92rem] text-ink/55">
-            Manage parent contacts, child links, pickup permissions, and parent portal access.
-          </p>
-        </div>
+      {/* Header band */}
+      <div className="relative overflow-hidden rounded-2xl border border-line bg-gradient-to-br from-ink to-ink-soft px-6 py-6 text-paper shadow-[0_18px_40px_-24px_rgba(19,28,61,.55)]">
+        <div className="pointer-events-none absolute -right-10 -top-12 h-44 w-44 rounded-full bg-accent/20 blur-2xl" />
+        <div className="pointer-events-none absolute -bottom-16 right-24 h-40 w-40 rounded-full bg-lime/10 blur-2xl" />
+        <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-4">
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-paper/10 text-paper ring-1 ring-paper/15 backdrop-blur">
+              <ParentsIcon width={24} height={24} />
+            </span>
+            <div>
+              <h1 className="text-[1.7rem] font-extrabold leading-tight tracking-[-0.02em]">Parents &amp; Guardians</h1>
+              <p className="mt-1 max-w-xl text-[0.9rem] text-paper/65">
+                Manage parent contacts, child links, pickup permissions, and parent portal access.
+              </p>
+              {meta && (
+                <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-paper/10 px-3 py-1 text-[0.78rem] font-semibold text-paper ring-1 ring-paper/15">
+                  <span className="text-lime">{meta.total}</span>
+                  {meta.total === 1 ? 'guardian' : 'guardians'}
+                  {activeFilters > 0 && <span className="text-paper/55">· filtered</span>}
+                </span>
+              )}
+            </div>
+          </div>
 
-        <button
-          type="button"
-          onClick={() => setGuardianModal('new')}
-          className="inline-flex w-fit items-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-accent-2"
-        >
-          <PlusIcon width={16} height={16} />
-          Add Guardian
-        </button>
+          <button
+            type="button"
+            onClick={() => setGuardianModal('new')}
+            className="inline-flex w-fit items-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_-8px_rgba(238,106,44,.7)] transition hover:bg-accent-2 hover:-translate-y-0.5"
+          >
+            <PlusIcon width={17} height={17} />
+            Add Guardian
+          </button>
+        </div>
       </div>
 
-      <div className="rounded-2xl border border-line bg-white p-4">
-        <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_170px_170px_auto]">
+      {/* Filter toolbar */}
+      <div className="rounded-2xl border border-line bg-white p-4 shadow-sm">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-[0.8rem] font-semibold text-ink/55">
+            <FilterIcon width={16} height={16} className="text-accent" />
+            Filters
+            {activeFilters > 0 && (
+              <span className="rounded-full bg-accent/12 px-2 py-0.5 text-[0.7rem] font-bold text-accent">
+                {activeFilters} active
+              </span>
+            )}
+          </div>
+          {activeFilters > 0 && (
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="text-[0.78rem] font-semibold text-ink/45 transition hover:text-accent"
+            >
+              Clear all
+            </button>
+          )}
+        </div>
+        <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_repeat(2,minmax(0,200px))]">
           <label className="relative">
             <span className="sr-only">Search guardians</span>
             <SearchIcon className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink/35" width={17} height={17} />
@@ -194,19 +268,6 @@ export default function GuardianPage() {
             <option value="inactive">Portal inactive</option>
             <option value="suspended">Portal suspended</option>
           </select>
-
-          <button
-            type="button"
-            onClick={() => {
-              setSearch('')
-              setStatus('')
-              setPortalStatus('')
-              setPage(1)
-            }}
-            className="rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-semibold text-ink/65 transition hover:border-accent hover:text-accent"
-          >
-            Reset
-          </button>
         </div>
       </div>
 
@@ -214,69 +275,69 @@ export default function GuardianPage() {
         <GuardianTableSkeleton />
       ) : isError ? (
         <GuardianErrorState onRetry={() => refetch()} />
+      ) : guardians.length === 0 ? (
+        <GuardianEmptyState hasFilters={activeFilters > 0} onReset={resetFilters} onAdd={() => setGuardianModal('new')} />
       ) : (
         <>
-          <div className="overflow-x-auto rounded-2xl border border-line bg-white">
+          <div className="overflow-x-auto rounded-2xl border border-line bg-white shadow-sm">
             <table className="w-full min-w-[980px] text-left text-[0.85rem]">
               <thead>
-                <tr className="border-b border-line bg-paper/60 text-[0.72rem] uppercase tracking-wider text-ink/45">
-                  <th className="px-5 py-3 font-semibold">Guardian</th>
-                  <th className="px-4 py-3 font-semibold">Contact</th>
-                  <th className="px-4 py-3 font-semibold">Children</th>
-                  <th className="px-4 py-3 font-semibold">Portal</th>
-                  <th className="px-4 py-3 font-semibold">Status</th>
-                  <th className="px-5 py-3 font-semibold text-right">Actions</th>
+                <tr className="border-b border-line bg-paper/60 text-[0.7rem] uppercase tracking-[0.08em] text-ink/45">
+                  <th className="px-5 py-3.5 font-bold">Guardian</th>
+                  <th className="px-4 py-3.5 font-bold">Contact</th>
+                  <th className="px-4 py-3.5 font-bold">Children</th>
+                  <th className="px-4 py-3.5 font-bold">Portal</th>
+                  <th className="px-4 py-3.5 font-bold">Status</th>
+                  <th className="px-5 py-3.5 text-right font-bold">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {guardians.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-ink/40">
-                      No guardians match the current filters.
-                    </td>
-                  </tr>
-                ) : (
-                  guardians.map((guardian) => (
-                    <GuardianRow
-                      key={guardian.id}
-                      guardian={guardian}
-                      onView={() => setProfileModal(guardian)}
-                      onEdit={() => setGuardianModal(guardian)}
-                      onChildren={() => setChildrenModal(guardian)}
-                      onReset={() => setResetModal(guardian)}
-                      onArchive={() => {
-                        if (window.confirm(`Archive ${guardian.name}? Parent portal access will be deactivated.`)) {
-                          archiveMutation.mutate(guardian.id)
-                        }
-                      }}
-                    />
-                  ))
-                )}
+                {guardians.map((guardian) => (
+                  <GuardianRow
+                    key={guardian.id}
+                    guardian={guardian}
+                    onView={() => setProfileModal(guardian)}
+                    onEdit={() => setGuardianModal(guardian)}
+                    onChildren={() => setChildrenModal(guardian)}
+                    onReset={() => setResetModal(guardian)}
+                    onArchive={() => {
+                      if (window.confirm(`Archive ${guardian.name}? Parent portal access will be deactivated.`)) {
+                        archiveMutation.mutate(guardian.id)
+                      }
+                    }}
+                  />
+                ))}
               </tbody>
             </table>
           </div>
 
           {meta && (
-            <div className="flex flex-col gap-3 rounded-2xl border border-line bg-white px-4 py-3 text-[0.84rem] text-ink/55 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 rounded-2xl border border-line bg-white px-4 py-3 text-[0.84rem] text-ink/55 shadow-sm sm:flex-row sm:items-center sm:justify-between">
               <span>
-                Showing {meta.from ?? 0}-{meta.to ?? 0} of {meta.total}
+                Showing <span className="font-semibold text-ink/75">{meta.from ?? 0}–{meta.to ?? 0}</span> of{' '}
+                <span className="font-semibold text-ink/75">{meta.total}</span>
               </span>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   disabled={page <= 1}
                   onClick={() => setPage((current) => Math.max(current - 1, 1))}
-                  className="rounded-xl border border-line bg-white px-4 py-2 font-semibold text-ink/65 transition hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex items-center gap-1 rounded-xl border border-line bg-white px-3 py-2 font-semibold text-ink/65 transition hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-line disabled:hover:text-ink/65"
                 >
-                  Previous
+                  <ChevronLeftIcon width={16} height={16} />
+                  Prev
                 </button>
+                <span className="px-2 text-[0.8rem] font-semibold text-ink/45">
+                  {meta.current_page} / {meta.last_page}
+                </span>
                 <button
                   type="button"
                   disabled={page >= meta.last_page}
                   onClick={() => setPage((current) => Math.min(current + 1, meta.last_page))}
-                  className="rounded-xl border border-line bg-white px-4 py-2 font-semibold text-ink/65 transition hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex items-center gap-1 rounded-xl border border-line bg-white px-3 py-2 font-semibold text-ink/65 transition hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-line disabled:hover:text-ink/65"
                 >
                   Next
+                  <ChevronRightIcon width={16} height={16} />
                 </button>
               </div>
             </div>
@@ -346,49 +407,101 @@ function GuardianRow({
   onArchive: () => void
 }) {
   return (
-    <tr className="border-b border-line/60 last:border-0 hover:bg-paper/50">
+    <tr className="group border-b border-line/60 transition-colors last:border-0 hover:bg-accent/[0.035]">
       <td className="px-5 py-3">
-        <div className="font-semibold text-ink">{guardian.name}</div>
-        <div className="mt-0.5 text-[0.76rem] text-ink/45">{guardian.relation ?? 'Guardian'}</div>
+        <div className="flex items-center gap-3">
+          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-paper-2 to-paper text-[0.82rem] font-bold text-ink/60 ring-1 ring-line transition group-hover:ring-accent/30">
+            {initials(guardian.name)}
+          </div>
+          <div className="min-w-0">
+            <div className="truncate font-semibold text-ink">{guardian.name}</div>
+            <div className="mt-0.5 text-[0.76rem] text-ink/45">{guardian.relation ?? 'Guardian'}</div>
+          </div>
+        </div>
       </td>
       <td className="px-4 py-3 text-ink/65">
-        <div>{guardian.phone ?? '-'}</div>
-        <div className="mt-0.5 text-[0.76rem] text-ink/45">{guardian.email ?? '-'}</div>
+        <div className="truncate">{guardian.phone ?? '—'}</div>
+        <div className="mt-0.5 truncate text-[0.76rem] text-ink/45">{guardian.email ?? '—'}</div>
       </td>
       <td className="px-4 py-3">
         <ChildSummary students={guardian.students} />
       </td>
       <td className="px-4 py-3">
-        {guardian.portal.has_login ? <StatusBadge status={guardian.portal.status ?? 'inactive'} /> : <span className="text-ink/35">No portal</span>}
+        {guardian.portal.has_login ? <StatusBadge status={guardian.portal.status ?? 'inactive'} /> : <span className="text-[0.78rem] text-ink/35">No portal</span>}
       </td>
       <td className="px-4 py-3">
         <StatusBadge status={guardian.status} />
       </td>
-      <td className="px-5 py-3 text-right">
-        <div className="flex justify-end gap-3">
-          <button type="button" onClick={onView} className="text-[0.78rem] font-semibold text-ink/60 hover:text-accent">
-            View
-          </button>
-          <button type="button" onClick={onChildren} className="text-[0.78rem] font-semibold text-ink/60 hover:text-accent">
-            Children
-          </button>
-          <button
-            type="button"
+      <td className="px-5 py-3">
+        <div className="flex items-center justify-end gap-1 opacity-80 transition-opacity group-hover:opacity-100">
+          <RowAction label="View profile" onClick={onView}>
+            <EyeIcon width={17} height={17} />
+          </RowAction>
+          <RowAction label="Linked children" onClick={onChildren}>
+            <LinkIcon width={17} height={17} />
+          </RowAction>
+          <RowAction
+            label={guardian.portal.has_login ? 'Reset password' : 'No portal login'}
             onClick={onReset}
             disabled={!guardian.portal.has_login}
-            className="text-[0.78rem] font-semibold text-ink/60 hover:text-accent disabled:cursor-not-allowed disabled:text-ink/25"
           >
-            Reset
-          </button>
-          <button type="button" onClick={onEdit} className="text-[0.78rem] font-semibold text-ink/60 hover:text-accent">
-            Edit
-          </button>
-          <button type="button" onClick={onArchive} className="text-[0.78rem] font-semibold text-[#dc2626] hover:underline">
-            Archive
-          </button>
+            <KeyIcon width={17} height={17} />
+          </RowAction>
+          <RowAction label="Edit" onClick={onEdit}>
+            <EditIcon width={17} height={17} />
+          </RowAction>
+          <RowAction label="Archive" onClick={onArchive} danger>
+            <ArchiveIcon width={17} height={17} />
+          </RowAction>
         </div>
       </td>
     </tr>
+  )
+}
+
+function GuardianEmptyState({
+  hasFilters,
+  onReset,
+  onAdd,
+}: {
+  hasFilters: boolean
+  onReset: () => void
+  onAdd: () => void
+}) {
+  return (
+    <div className="grid place-items-center rounded-2xl border border-dashed border-line bg-white py-16 text-center shadow-sm">
+      <span className="grid h-16 w-16 place-items-center rounded-2xl bg-accent/10 text-accent">
+        <ParentsIcon width={30} height={30} />
+      </span>
+      <h3 className="mt-4 text-[1.05rem] font-bold text-ink">
+        {hasFilters ? 'No guardians match these filters' : 'No guardians yet'}
+      </h3>
+      <p className="mt-1 max-w-sm text-[0.86rem] text-ink/50">
+        {hasFilters
+          ? 'Try adjusting or clearing the filters to see more results.'
+          : 'Add a parent or guardian to link children and grant parent portal access.'}
+      </p>
+      <div className="mt-5 flex gap-2.5">
+        {hasFilters ? (
+          <button
+            type="button"
+            onClick={onReset}
+            className="rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-semibold text-ink/65 transition hover:border-accent hover:text-accent"
+          >
+            Clear filters
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onAdd}
+            className="inline-flex items-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_-8px_rgba(238,106,44,.7)] transition hover:bg-accent-2 hover:-translate-y-0.5"
+          >
+            <PlusIcon width={17} height={17} />
+            Add Guardian
+          </button>
+        )}
+      </div>
+    </div>
   )
 }
 
@@ -861,26 +974,58 @@ function SmallBadge({ label }: { label: string }) {
 
 function GuardianTableSkeleton() {
   return (
-    <div className="animate-pulse space-y-4">
-      <div className="h-[360px] rounded-2xl bg-ink/5" />
-      <div className="h-14 rounded-2xl bg-ink/5" />
+    <div className="space-y-4">
+      <div className="overflow-hidden rounded-2xl border border-line bg-white shadow-sm">
+        <div className="border-b border-line bg-paper/60 px-5 py-3.5">
+          <div className="h-3 w-24 animate-pulse rounded bg-ink/10" />
+        </div>
+        <div className="divide-y divide-line/60">
+          {Array.from({ length: 7 }).map((_, index) => (
+            <div key={index} className="flex items-center gap-4 px-5 py-3.5">
+              <div className="h-11 w-11 shrink-0 animate-pulse rounded-xl bg-ink/[0.07]" />
+              <div className="flex-1 space-y-2">
+                <div className="h-3 w-36 animate-pulse rounded bg-ink/[0.08]" />
+                <div className="h-2.5 w-20 animate-pulse rounded bg-ink/[0.05]" />
+              </div>
+              <div className="hidden h-6 w-24 animate-pulse rounded-full bg-ink/[0.06] sm:block" />
+              <div className="hidden h-6 w-16 animate-pulse rounded-full bg-ink/[0.06] md:block" />
+              <div className="h-8 w-28 animate-pulse rounded-lg bg-ink/[0.05]" />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="h-14 animate-pulse rounded-2xl bg-ink/[0.05]" />
     </div>
   )
 }
 
 function GuardianErrorState({ onRetry }: { onRetry: () => void }) {
   return (
-    <div className="grid place-items-center rounded-2xl border border-line bg-white py-20 text-center">
-      <p className="text-ink/70">We could not load guardian records.</p>
+    <div className="grid place-items-center rounded-2xl border border-line bg-white py-20 text-center shadow-sm">
+      <span className="grid h-14 w-14 place-items-center rounded-2xl bg-[#dc2626]/10 text-[#dc2626]">
+        <ArchiveIcon width={26} height={26} />
+      </span>
+      <p className="mt-4 font-semibold text-ink/75">We couldn’t load guardian records.</p>
+      <p className="mt-1 text-[0.85rem] text-ink/50">Check your connection and try again.</p>
       <button
         type="button"
         onClick={onRetry}
-        className="mt-4 rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-accent-2"
+        className="mt-5 rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_-8px_rgba(238,106,44,.7)] transition hover:bg-accent-2 hover:-translate-y-0.5"
       >
         Try again
       </button>
     </div>
   )
+}
+
+function initials(name: string): string {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase()
 }
 
 function toGuardianPayload(values: GuardianFormValues): GuardianPayload {

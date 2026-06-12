@@ -4,6 +4,7 @@ import { extractErrorMessage } from '@/lib/errors'
 import { inputClass } from '../../components/FormField'
 import Modal from '../../components/Modal'
 import StatusBadge from '../../components/StatusBadge'
+import { ChevronLeftIcon, ChevronRightIcon, EyeIcon, FilterIcon } from '../../components/icons'
 import type { AcademicSession, SchoolClass } from '../AttendancePage'
 import { fetchAttendanceSession, fetchAttendanceSessions } from '../api'
 import type { AttendanceSession } from '../types'
@@ -66,7 +67,11 @@ export default function SessionsTab({ academicSessions, classes, onOpenSession, 
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-line bg-white p-4">
+      <div className="rounded-2xl border border-line bg-white p-4 shadow-sm">
+        <div className="mb-3 flex items-center gap-2 text-[0.8rem] font-semibold text-ink/55">
+          <FilterIcon width={16} height={16} className="text-accent" />
+          Filters
+        </div>
         <div className="grid gap-3 lg:grid-cols-[minmax(160px,1fr)_minmax(160px,1fr)_150px_150px_150px_auto]">
           <select
             value={academicSessionId}
@@ -159,16 +164,16 @@ export default function SessionsTab({ academicSessions, classes, onOpenSession, 
       </div>
 
       {isLoading ? (
-        <div className="h-80 animate-pulse rounded-2xl bg-ink/5" />
+        <div className="h-80 animate-pulse rounded-2xl bg-ink/[0.05]" />
       ) : isError ? (
-        <div className="grid place-items-center rounded-2xl border border-line bg-white px-5 py-14">
+        <div className="grid place-items-center rounded-2xl border border-line bg-white px-5 py-14 shadow-sm">
           <div className="text-center">
             <p className="text-[0.9rem] font-semibold text-ink">Unable to load attendance sessions</p>
             <p className="mt-1 text-[0.82rem] text-ink/50">{extractErrorMessage(error)}</p>
             <button
               type="button"
               onClick={() => refetch()}
-              className="mt-4 rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-white"
+              className="mt-4 rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_-8px_rgba(238,106,44,.7)] transition hover:bg-accent-2 hover:-translate-y-0.5"
             >
               Try again
             </button>
@@ -176,48 +181,56 @@ export default function SessionsTab({ academicSessions, classes, onOpenSession, 
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto rounded-2xl border border-line bg-white">
+          <div className="overflow-x-auto rounded-2xl border border-line bg-white shadow-sm">
             <table className="w-full text-left text-[0.85rem]">
               <thead>
-                <tr className="border-b border-line bg-paper/60 text-[0.72rem] uppercase tracking-wider text-ink/45">
-                  <th className="px-5 py-3 font-semibold">Date</th>
-                  <th className="px-4 py-3 font-semibold">Class</th>
-                  <th className="px-4 py-3 font-semibold">Marked By</th>
-                  <th className="px-4 py-3 font-semibold">Summary</th>
-                  <th className="px-4 py-3 font-semibold">Status</th>
-                  <th className="px-5 py-3 text-right font-semibold">Action</th>
+                <tr className="border-b border-line bg-paper/60 text-[0.7rem] uppercase tracking-[0.08em] text-ink/45">
+                  <th className="px-5 py-3.5 font-bold">Date</th>
+                  <th className="px-4 py-3.5 font-bold">Class</th>
+                  <th className="px-4 py-3.5 font-bold">Marked By</th>
+                  <th className="px-4 py-3.5 font-bold">Summary</th>
+                  <th className="px-4 py-3.5 font-bold">Status</th>
+                  <th className="px-5 py-3.5 text-right font-bold">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-10 text-center text-ink/40">
+                    <td colSpan={6} className="px-6 py-12 text-center text-[0.86rem] text-ink/40">
                       No attendance sessions match the current filters.
                     </td>
                   </tr>
                 ) : (
                   rows.map((session) => (
-                    <tr key={session.id} className="border-b border-line/60 last:border-0 hover:bg-paper/50">
-                      <td className="px-5 py-3 font-medium text-ink">{session.attendance_date}</td>
+                    <tr key={session.id} className="group border-b border-line/60 transition-colors last:border-0 hover:bg-accent/[0.035]">
+                      <td className="px-5 py-3 font-semibold text-ink">{session.attendance_date}</td>
                       <td className="px-4 py-3 text-ink/65">
                         {session.class?.name ?? '—'}
                         {session.section ? ` · ${session.section.name}` : ''}
                       </td>
                       <td className="px-4 py-3 text-ink/55">{session.marker?.name ?? '—'}</td>
-                      <td className="px-4 py-3 text-ink/65">
-                        {session.summary.present} present · {session.summary.absent} absent · {session.summary.late} late
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <SummaryChip value={session.summary.present} label="P" tone="success" />
+                          <SummaryChip value={session.summary.absent} label="A" tone="danger" />
+                          <SummaryChip value={session.summary.late} label="L" tone="warn" />
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <StatusBadge status={session.status} />
                       </td>
-                      <td className="px-5 py-3 text-right">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedSessionId(session.id)}
-                          className="rounded-lg border border-line bg-white px-3 py-1.5 text-[0.76rem] font-semibold text-ink/65 transition hover:border-accent hover:text-accent"
-                        >
-                          View
-                        </button>
+                      <td className="px-5 py-3">
+                        <div className="flex justify-end opacity-80 transition-opacity group-hover:opacity-100">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedSessionId(session.id)}
+                            title="View session"
+                            aria-label="View session"
+                            className="grid h-8 w-8 place-items-center rounded-lg bg-[#2c49a6]/12 text-[#2c49a6] transition hover:scale-110 hover:bg-[#2c49a6]/22"
+                          >
+                            <EyeIcon width={17} height={17} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -227,26 +240,32 @@ export default function SessionsTab({ academicSessions, classes, onOpenSession, 
           </div>
 
           {meta && (
-            <div className="flex items-center gap-2 rounded-2xl border border-line bg-white px-4 py-3 text-[0.84rem] text-ink/55">
+            <div className="flex items-center gap-2 rounded-2xl border border-line bg-white px-4 py-3 text-[0.84rem] text-ink/55 shadow-sm">
               <span>
-                Showing {meta.from ?? 0}-{meta.to ?? 0} of {meta.total}
+                Showing <span className="font-semibold text-ink/75">{meta.from ?? 0}–{meta.to ?? 0}</span> of{' '}
+                <span className="font-semibold text-ink/75">{meta.total}</span>
               </span>
-              <div className="ml-auto flex gap-2">
+              <div className="ml-auto flex items-center gap-2">
                 <button
                   type="button"
                   disabled={page <= 1}
                   onClick={() => setPage((current) => Math.max(current - 1, 1))}
-                  className="rounded-xl border border-line bg-white px-4 py-2 font-semibold text-ink/65 transition hover:border-accent hover:text-accent disabled:opacity-40"
+                  className="inline-flex items-center gap-1 rounded-xl border border-line bg-white px-3 py-2 font-semibold text-ink/65 transition hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-line disabled:hover:text-ink/65"
                 >
-                  Previous
+                  <ChevronLeftIcon width={16} height={16} />
+                  Prev
                 </button>
+                <span className="px-2 text-[0.8rem] font-semibold text-ink/45">
+                  {meta.current_page} / {meta.last_page}
+                </span>
                 <button
                   type="button"
                   disabled={page >= meta.last_page}
                   onClick={() => setPage((current) => Math.min(current + 1, meta.last_page))}
-                  className="rounded-xl border border-line bg-white px-4 py-2 font-semibold text-ink/65 transition hover:border-accent hover:text-accent disabled:opacity-40"
+                  className="inline-flex items-center gap-1 rounded-xl border border-line bg-white px-3 py-2 font-semibold text-ink/65 transition hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-line disabled:hover:text-ink/65"
                 >
                   Next
+                  <ChevronRightIcon width={16} height={16} />
                 </button>
               </div>
             </div>
@@ -322,7 +341,7 @@ function SessionDetail({ session, onOpenSession }: { session: AttendanceSession;
         <button
           type="button"
           onClick={() => onOpenSession(session)}
-          className="rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(238,106,44,.24)] transition hover:bg-accent-dark"
+          className="rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_-8px_rgba(238,106,44,.7)] transition hover:bg-accent-2 hover:-translate-y-0.5"
         >
           Open Roster
         </button>
@@ -333,9 +352,24 @@ function SessionDetail({ session, onOpenSession }: { session: AttendanceSession;
 
 function DetailStat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-xl border border-line bg-white px-4 py-3">
+    <div className="rounded-xl border border-line bg-white px-4 py-3 shadow-sm">
       <p className="text-[0.7rem] font-semibold uppercase tracking-wider text-ink/40">{label}</p>
       <p className="mt-1 text-[1.2rem] font-extrabold text-ink">{value}</p>
     </div>
+  )
+}
+
+function SummaryChip({ value, label, tone }: { value: number; label: string; tone: 'success' | 'danger' | 'warn' }) {
+  const cls =
+    tone === 'success'
+      ? 'bg-[#168a66]/10 text-[#168a66]'
+      : tone === 'danger'
+        ? 'bg-[#dc2626]/10 text-[#dc2626]'
+        : 'bg-lime/15 text-[#b45309]'
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.72rem] font-bold ${cls}`}>
+      <span className="opacity-60">{label}</span>
+      {value}
+    </span>
   )
 }

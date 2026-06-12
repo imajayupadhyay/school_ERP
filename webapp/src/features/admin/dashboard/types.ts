@@ -31,9 +31,49 @@ export interface RecentStudent {
   admission_date: string | null
 }
 
+export interface FeeSummary {
+  billed: number
+  collected: number
+  outstanding: number
+  overdue: number
+  collection_rate: number
+}
+
+export interface FeeStatusBreakdown {
+  paid: number
+  partial: number
+  pending: number
+  overdue: number
+}
+
+export interface AttendanceToday {
+  date: string | null
+  present: number
+  absent: number
+  late: number
+  excused: number
+  total: number
+  rate: number
+}
+
+export interface TrendPoint {
+  label: string
+  month?: string
+  date?: string
+  amount?: number
+  count?: number
+  rate?: number
+}
+
 export interface DashboardData {
   school: School
   stats: DashboardStats
+  fees: FeeSummary
+  fee_status: FeeStatusBreakdown
+  collection_trend: TrendPoint[]
+  attendance_today: AttendanceToday
+  attendance_trend: TrendPoint[]
+  admissions_trend: TrendPoint[]
   students_by_gender: GenderSplit
   students_by_class: ClassCount[]
   recent_students: RecentStudent[]

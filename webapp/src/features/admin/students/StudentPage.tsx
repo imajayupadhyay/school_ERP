@@ -11,7 +11,23 @@ import { extractErrorMessage } from '@/lib/errors'
 import FormField, { inputClass } from '../components/FormField'
 import Modal from '../components/Modal'
 import StatusBadge from '../components/StatusBadge'
-import { PlusIcon, SearchIcon, UploadIcon } from '../components/icons'
+import { RowAction } from '../components/TableUI'
+import {
+  ArchiveIcon,
+  CameraIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  DownloadIcon,
+  EditIcon,
+  EyeIcon,
+  FilterIcon,
+  GraduationIcon,
+  PlusIcon,
+  SearchIcon,
+  TransferIcon,
+  UploadIcon,
+  UsersGroupIcon,
+} from '../components/icons'
 import {
   archiveStudent,
   createStudent,
@@ -173,43 +189,73 @@ export default function StudentPage() {
   const students = data?.items ?? []
   const meta = data?.meta
 
+  const activeFilters = [search, status, gender, sessionId, classId, sectionId].filter(Boolean).length
+  const resetFilters = () => {
+    setSearch('')
+    setStatus('')
+    setGender('')
+    setSessionId('')
+    setClassId('')
+    setSectionId('')
+    setPage(1)
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h1 className="text-[1.7rem] font-extrabold tracking-[-0.02em] text-ink">Students</h1>
-          <p className="mt-1 text-[0.92rem] text-ink/55">
-            Manage admissions, class placement, guardians, medical notes, transfers, and promotions.
-          </p>
-        </div>
-
-        {canEdit && (
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => exportMutation.mutate()}
-              disabled={exportMutation.isPending}
-              className="rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-semibold text-ink/65 transition hover:border-accent hover:text-accent disabled:opacity-60"
-            >
-              {exportMutation.isPending ? 'Exporting...' : 'Export CSV'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setPromoteOpen(true)}
-              className="rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-semibold text-ink/65 transition hover:border-accent hover:text-accent"
-            >
-              Promote
-            </button>
-            <button
-              type="button"
-              onClick={() => setStudentModal('new')}
-              className="inline-flex items-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-accent-2"
-            >
-              <PlusIcon width={16} height={16} />
-              Add Student
-            </button>
+      {/* Header band */}
+      <div className="relative overflow-hidden rounded-2xl border border-line bg-gradient-to-br from-ink to-ink-soft px-6 py-6 text-paper shadow-[0_18px_40px_-24px_rgba(19,28,61,.55)]">
+        <div className="pointer-events-none absolute -right-10 -top-12 h-44 w-44 rounded-full bg-accent/20 blur-2xl" />
+        <div className="pointer-events-none absolute -bottom-16 right-24 h-40 w-40 rounded-full bg-lime/10 blur-2xl" />
+        <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-4">
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-paper/10 text-paper ring-1 ring-paper/15 backdrop-blur">
+              <UsersGroupIcon width={24} height={24} />
+            </span>
+            <div>
+              <h1 className="text-[1.7rem] font-extrabold leading-tight tracking-[-0.02em]">Students</h1>
+              <p className="mt-1 max-w-xl text-[0.9rem] text-paper/65">
+                Manage admissions, class placement, guardians, medical notes, transfers, and promotions.
+              </p>
+              {meta && (
+                <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-paper/10 px-3 py-1 text-[0.78rem] font-semibold text-paper ring-1 ring-paper/15">
+                  <span className="text-lime">{meta.total}</span>
+                  {meta.total === 1 ? 'student' : 'students'}
+                  {activeFilters > 0 && <span className="text-paper/55">· filtered</span>}
+                </span>
+              )}
+            </div>
           </div>
-        )}
+
+          {canEdit && (
+            <div className="flex flex-wrap gap-2.5">
+              <button
+                type="button"
+                onClick={() => exportMutation.mutate()}
+                disabled={exportMutation.isPending}
+                className="inline-flex items-center gap-2 rounded-xl border border-paper/20 bg-paper/5 px-4 py-2.5 text-sm font-semibold text-paper/90 transition hover:bg-paper/15 hover:shadow-lg disabled:opacity-60"
+              >
+                <DownloadIcon width={17} height={17} />
+                {exportMutation.isPending ? 'Exporting…' : 'Export'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPromoteOpen(true)}
+                className="inline-flex items-center gap-2 rounded-xl border border-paper/20 bg-paper/5 px-4 py-2.5 text-sm font-semibold text-paper/90 transition hover:bg-paper/15 hover:shadow-lg"
+              >
+                <GraduationIcon width={17} height={17} />
+                Promote
+              </button>
+              <button
+                type="button"
+                onClick={() => setStudentModal('new')}
+                className="inline-flex items-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_-8px_rgba(238,106,44,.7)] transition hover:bg-accent-2 hover:-translate-y-0.5"
+              >
+                <PlusIcon width={17} height={17} />
+                Add Student
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {!canEdit && (
@@ -218,8 +264,29 @@ export default function StudentPage() {
         </div>
       )}
 
-      <div className="rounded-2xl border border-line bg-white p-4">
-        <div className="grid gap-3 xl:grid-cols-[minmax(220px,1fr)_150px_150px_150px_140px_140px_auto]">
+      {/* Filter toolbar */}
+      <div className="rounded-2xl border border-line bg-white p-4 shadow-sm">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-[0.8rem] font-semibold text-ink/55">
+            <FilterIcon width={16} height={16} className="text-accent" />
+            Filters
+            {activeFilters > 0 && (
+              <span className="rounded-full bg-accent/12 px-2 py-0.5 text-[0.7rem] font-bold text-accent">
+                {activeFilters} active
+              </span>
+            )}
+          </div>
+          {activeFilters > 0 && (
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="text-[0.78rem] font-semibold text-ink/45 transition hover:text-accent"
+            >
+              Clear all
+            </button>
+          )}
+        </div>
+        <div className="grid gap-3 xl:grid-cols-[minmax(220px,1fr)_repeat(5,minmax(0,1fr))]">
           <label className="relative">
             <span className="sr-only">Search students</span>
             <SearchIcon className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink/35" width={17} height={17} />
@@ -230,7 +297,7 @@ export default function StudentPage() {
                 setPage(1)
               }}
               className={`${inputClass} pl-9`}
-              placeholder="Search admission no, name, roll, guardian"
+              placeholder="Search name, admission, roll, guardian"
             />
           </label>
 
@@ -285,22 +352,6 @@ export default function StudentPage() {
             <option value="female">Female</option>
             <option value="other">Other</option>
           </select>
-
-          <button
-            type="button"
-            onClick={() => {
-              setSearch('')
-              setStatus('')
-              setGender('')
-              setSessionId('')
-              setClassId('')
-              setSectionId('')
-              setPage(1)
-            }}
-            className="rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-semibold text-ink/65 transition hover:border-accent hover:text-accent"
-          >
-            Reset
-          </button>
         </div>
       </div>
 
@@ -308,71 +359,71 @@ export default function StudentPage() {
         <StudentTableSkeleton />
       ) : isError ? (
         <StudentErrorState onRetry={() => refetch()} />
+      ) : students.length === 0 ? (
+        <StudentEmptyState canEdit={canEdit} hasFilters={activeFilters > 0} onReset={resetFilters} onAdd={() => setStudentModal('new')} />
       ) : (
         <>
-          <div className="overflow-x-auto rounded-2xl border border-line bg-white">
+          <div className="overflow-x-auto rounded-2xl border border-line bg-white shadow-sm">
             <table className="w-full min-w-[1080px] text-left text-[0.85rem]">
               <thead>
-                <tr className="border-b border-line bg-paper/60 text-[0.72rem] uppercase tracking-wider text-ink/45">
-                  <th className="px-5 py-3 font-semibold">Student</th>
-                  <th className="px-4 py-3 font-semibold">Class</th>
-                  <th className="px-4 py-3 font-semibold">Guardian</th>
-                  <th className="px-4 py-3 font-semibold">Contact</th>
-                  <th className="px-4 py-3 font-semibold">Health</th>
-                  <th className="px-4 py-3 font-semibold">Status</th>
-                  <th className="px-5 py-3 font-semibold text-right">Actions</th>
+                <tr className="border-b border-line bg-paper/60 text-[0.7rem] uppercase tracking-[0.08em] text-ink/45">
+                  <th className="px-5 py-3.5 font-bold">Student</th>
+                  <th className="px-4 py-3.5 font-bold">Class</th>
+                  <th className="px-4 py-3.5 font-bold">Guardian</th>
+                  <th className="px-4 py-3.5 font-bold">Contact</th>
+                  <th className="px-4 py-3.5 font-bold">Health</th>
+                  <th className="px-4 py-3.5 font-bold">Status</th>
+                  <th className="px-5 py-3.5 text-right font-bold">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {students.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center text-ink/40">
-                      No students match the current filters.
-                    </td>
-                  </tr>
-                ) : (
-                  students.map((student) => (
-                    <StudentRow
-                      key={student.id}
-                      student={student}
-                      canEdit={canEdit}
-                      onView={() => setProfileModal(student)}
-                      onEdit={() => setStudentModal(student)}
-                      onTransfer={() => setTransferModal(student)}
-                      onPhoto={() => setPhotoModal(student)}
-                      onArchive={() => {
-                        if (window.confirm(`Archive ${student.full_name}?`)) {
-                          archiveMutation.mutate(student.id)
-                        }
-                      }}
-                    />
-                  ))
-                )}
+                {students.map((student) => (
+                  <StudentRow
+                    key={student.id}
+                    student={student}
+                    canEdit={canEdit}
+                    onView={() => setProfileModal(student)}
+                    onEdit={() => setStudentModal(student)}
+                    onTransfer={() => setTransferModal(student)}
+                    onPhoto={() => setPhotoModal(student)}
+                    onArchive={() => {
+                      if (window.confirm(`Archive ${student.full_name}?`)) {
+                        archiveMutation.mutate(student.id)
+                      }
+                    }}
+                  />
+                ))}
               </tbody>
             </table>
           </div>
 
           {meta && (
-            <div className="flex flex-col gap-3 rounded-2xl border border-line bg-white px-4 py-3 text-[0.84rem] text-ink/55 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 rounded-2xl border border-line bg-white px-4 py-3 text-[0.84rem] text-ink/55 shadow-sm sm:flex-row sm:items-center sm:justify-between">
               <span>
-                Showing {meta.from ?? 0}-{meta.to ?? 0} of {meta.total}
+                Showing <span className="font-semibold text-ink/75">{meta.from ?? 0}–{meta.to ?? 0}</span> of{' '}
+                <span className="font-semibold text-ink/75">{meta.total}</span>
               </span>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   disabled={page <= 1}
                   onClick={() => setPage((current) => Math.max(current - 1, 1))}
-                  className="rounded-xl border border-line bg-white px-4 py-2 font-semibold text-ink/65 transition hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex items-center gap-1 rounded-xl border border-line bg-white px-3 py-2 font-semibold text-ink/65 transition hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-line disabled:hover:text-ink/65"
                 >
-                  Previous
+                  <ChevronLeftIcon width={16} height={16} />
+                  Prev
                 </button>
+                <span className="px-2 text-[0.8rem] font-semibold text-ink/45">
+                  {meta.current_page} / {meta.last_page}
+                </span>
                 <button
                   type="button"
                   disabled={page >= meta.last_page}
                   onClick={() => setPage((current) => Math.min(current + 1, meta.last_page))}
-                  className="rounded-xl border border-line bg-white px-4 py-2 font-semibold text-ink/65 transition hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex items-center gap-1 rounded-xl border border-line bg-white px-3 py-2 font-semibold text-ink/65 transition hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-line disabled:hover:text-ink/65"
                 >
                   Next
+                  <ChevronRightIcon width={16} height={16} />
                 </button>
               </div>
             </div>
@@ -462,69 +513,118 @@ function StudentRow({
   onArchive: () => void
 }) {
   return (
-    <tr className="border-b border-line/60 last:border-0 hover:bg-paper/50">
+    <tr className="group border-b border-line/60 transition-colors last:border-0 hover:bg-accent/[0.035]">
       <td className="px-5 py-3">
         <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-paper-2 text-[0.8rem] font-bold text-ink/60">
+          <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl bg-gradient-to-br from-paper-2 to-paper text-[0.82rem] font-bold text-ink/60 ring-1 ring-line transition group-hover:ring-accent/30">
             {student.photo_url ? <img src={student.photo_url} alt="" className="h-full w-full object-cover" /> : initials(student.full_name)}
           </div>
-          <div>
-            <div className="font-semibold text-ink">{student.full_name}</div>
+          <div className="min-w-0">
+            <div className="truncate font-semibold text-ink">{student.full_name}</div>
             <div className="mt-0.5 text-[0.76rem] text-ink/45">{student.admission_no ?? 'No admission no'}</div>
           </div>
         </div>
       </td>
       <td className="px-4 py-3 text-ink/65">
-        <div className="font-medium text-ink/75">{student.class_name ?? '-'}</div>
+        <div className="font-medium text-ink/75">{student.class_name ?? '—'}</div>
         <div className="mt-0.5 text-[0.76rem] text-ink/45">
-          {student.section ? `Section ${student.section}` : 'No section'} {student.roll_no ? `- Roll ${student.roll_no}` : ''}
+          {student.section ? `Section ${student.section}` : 'No section'} {student.roll_no ? `· Roll ${student.roll_no}` : ''}
         </div>
       </td>
       <td className="px-4 py-3 text-ink/65">
-        <div>{student.guardian_name ?? student.guardians[0]?.name ?? '-'}</div>
-        <div className="mt-0.5 text-[0.76rem] text-ink/45">{student.guardian_phone ?? student.guardians[0]?.phone ?? '-'}</div>
+        <div className="truncate">{student.guardian_name ?? student.guardians[0]?.name ?? '—'}</div>
+        <div className="mt-0.5 text-[0.76rem] text-ink/45">{student.guardian_phone ?? student.guardians[0]?.phone ?? '—'}</div>
       </td>
       <td className="px-4 py-3 text-ink/65">
-        <div>{student.primary_phone ?? '-'}</div>
-        <div className="mt-0.5 text-[0.76rem] text-ink/45">{student.primary_email ?? '-'}</div>
+        <div className="truncate">{student.primary_phone ?? '—'}</div>
+        <div className="mt-0.5 truncate text-[0.76rem] text-ink/45">{student.primary_email ?? '—'}</div>
       </td>
       <td className="px-4 py-3 text-ink/65">
         {student.medical_conditions || student.allergies ? (
           <div>
-            <div>{student.blood_group ?? 'Blood group not set'}</div>
+            <div className="font-medium text-ink/70">{student.blood_group ?? 'Group n/a'}</div>
             <div className="mt-0.5 text-[0.76rem] text-[#dc2626]">{student.allergies ?? student.medical_conditions}</div>
           </div>
         ) : (
-          <span className="text-ink/35">No notes</span>
+          <span className="text-ink/35">{student.blood_group ?? 'No notes'}</span>
         )}
       </td>
       <td className="px-4 py-3">
         <StatusBadge status={student.status} />
       </td>
-      <td className="px-5 py-3 text-right">
-        <div className="flex justify-end gap-3">
-          <button type="button" onClick={onView} className="text-[0.78rem] font-semibold text-ink/60 hover:text-accent">
-            View
-          </button>
+      <td className="px-5 py-3">
+        <div className="flex items-center justify-end gap-1 opacity-80 transition-opacity group-hover:opacity-100">
+          <RowAction label="View profile" onClick={onView}>
+            <EyeIcon width={17} height={17} />
+          </RowAction>
           {canEdit && (
             <>
-              <button type="button" onClick={onPhoto} className="text-[0.78rem] font-semibold text-ink/60 hover:text-accent">
-                Photo
-              </button>
-              <button type="button" onClick={onTransfer} className="text-[0.78rem] font-semibold text-ink/60 hover:text-accent">
-                Transfer
-              </button>
-              <button type="button" onClick={onEdit} className="text-[0.78rem] font-semibold text-ink/60 hover:text-accent">
-                Edit
-              </button>
-              <button type="button" onClick={onArchive} className="text-[0.78rem] font-semibold text-[#dc2626] hover:underline">
-                Archive
-              </button>
+              <RowAction label="Upload photo" onClick={onPhoto}>
+                <CameraIcon width={17} height={17} />
+              </RowAction>
+              <RowAction label="Transfer" onClick={onTransfer}>
+                <TransferIcon width={17} height={17} />
+              </RowAction>
+              <RowAction label="Edit" onClick={onEdit}>
+                <EditIcon width={17} height={17} />
+              </RowAction>
+              <RowAction label="Archive" onClick={onArchive} danger>
+                <ArchiveIcon width={17} height={17} />
+              </RowAction>
             </>
           )}
         </div>
       </td>
     </tr>
+  )
+}
+
+function StudentEmptyState({
+  canEdit,
+  hasFilters,
+  onReset,
+  onAdd,
+}: {
+  canEdit: boolean
+  hasFilters: boolean
+  onReset: () => void
+  onAdd: () => void
+}) {
+  return (
+    <div className="grid place-items-center rounded-2xl border border-dashed border-line bg-white py-16 text-center shadow-sm">
+      <span className="grid h-16 w-16 place-items-center rounded-2xl bg-accent/10 text-accent">
+        <UsersGroupIcon width={30} height={30} />
+      </span>
+      <h3 className="mt-4 text-[1.05rem] font-bold text-ink">
+        {hasFilters ? 'No students match these filters' : 'No students yet'}
+      </h3>
+      <p className="mt-1 max-w-sm text-[0.86rem] text-ink/50">
+        {hasFilters
+          ? 'Try adjusting or clearing the filters to see more results.'
+          : 'Add your first student to start managing admissions and class placement.'}
+      </p>
+      <div className="mt-5 flex gap-2.5">
+        {hasFilters && (
+          <button
+            type="button"
+            onClick={onReset}
+            className="rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-semibold text-ink/65 transition hover:border-accent hover:text-accent"
+          >
+            Clear filters
+          </button>
+        )}
+        {canEdit && !hasFilters && (
+          <button
+            type="button"
+            onClick={onAdd}
+            className="inline-flex items-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_-8px_rgba(238,106,44,.7)] transition hover:bg-accent-2 hover:-translate-y-0.5"
+          >
+            <PlusIcon width={17} height={17} />
+            Add Student
+          </button>
+        )}
+      </div>
+    </div>
   )
 }
 
@@ -1262,21 +1362,43 @@ function Info({ label, value, wide = false }: { label: string; value?: string | 
 
 function StudentTableSkeleton() {
   return (
-    <div className="animate-pulse space-y-4">
-      <div className="h-[420px] rounded-2xl bg-ink/5" />
-      <div className="h-14 rounded-2xl bg-ink/5" />
+    <div className="space-y-4">
+      <div className="overflow-hidden rounded-2xl border border-line bg-white shadow-sm">
+        <div className="border-b border-line bg-paper/60 px-5 py-3.5">
+          <div className="h-3 w-24 animate-pulse rounded bg-ink/10" />
+        </div>
+        <div className="divide-y divide-line/60">
+          {Array.from({ length: 8 }).map((_, index) => (
+            <div key={index} className="flex items-center gap-4 px-5 py-3.5">
+              <div className="h-11 w-11 shrink-0 animate-pulse rounded-xl bg-ink/[0.07]" />
+              <div className="flex-1 space-y-2">
+                <div className="h-3 w-40 animate-pulse rounded bg-ink/[0.08]" />
+                <div className="h-2.5 w-24 animate-pulse rounded bg-ink/[0.05]" />
+              </div>
+              <div className="hidden h-3 w-28 animate-pulse rounded bg-ink/[0.06] sm:block" />
+              <div className="hidden h-6 w-16 animate-pulse rounded-full bg-ink/[0.06] md:block" />
+              <div className="h-8 w-28 animate-pulse rounded-lg bg-ink/[0.05]" />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="h-14 animate-pulse rounded-2xl bg-ink/[0.05]" />
     </div>
   )
 }
 
 function StudentErrorState({ onRetry }: { onRetry: () => void }) {
   return (
-    <div className="grid place-items-center rounded-2xl border border-line bg-white py-20 text-center">
-      <p className="text-ink/70">We could not load students.</p>
+    <div className="grid place-items-center rounded-2xl border border-line bg-white py-20 text-center shadow-sm">
+      <span className="grid h-14 w-14 place-items-center rounded-2xl bg-[#dc2626]/10 text-[#dc2626]">
+        <ArchiveIcon width={26} height={26} />
+      </span>
+      <p className="mt-4 font-semibold text-ink/75">We couldn’t load students.</p>
+      <p className="mt-1 text-[0.85rem] text-ink/50">Check your connection and try again.</p>
       <button
         type="button"
         onClick={onRetry}
-        className="mt-4 rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-accent-2"
+        className="mt-5 rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_-8px_rgba(238,106,44,.7)] transition hover:bg-accent-2 hover:-translate-y-0.5"
       >
         Try again
       </button>
