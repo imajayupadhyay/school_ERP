@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/features/auth/AuthContext'
+import NotificationBell from '../notifications/NotificationBell'
 import GlobalSearch from './GlobalSearch'
-import { BellIcon, ChevronDownIcon, LogoutIcon, MenuIcon, PanelLeftIcon } from './icons'
+import { ChevronDownIcon, LogoutIcon, MenuIcon, PanelLeftIcon } from './icons'
 
 interface TopbarProps {
   collapsed: boolean
@@ -65,14 +66,7 @@ export default function Topbar({ collapsed, onOpenMenu, onToggleCollapse }: Topb
       </div>
 
       <div className="ml-auto flex items-center gap-1.5 md:gap-2.5">
-        <button
-          type="button"
-          className="relative grid h-10 w-10 place-items-center rounded-xl text-ink/65 transition hover:bg-paper-2 hover:text-ink"
-          aria-label="Notifications"
-        >
-          <BellIcon />
-          <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-accent ring-2 ring-paper" />
-        </button>
+        <NotificationBell />
 
         <span className="hidden h-8 w-px bg-line md:block" />
 

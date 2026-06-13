@@ -755,12 +755,15 @@ class DemoSchoolSeeder extends Seeder
     }
 
     /**
-     * Seed a school-wide bell schedule plus a couple of published, clash-free
-     * class-section timetables so the module has realistic demo data.
+     * Seed a school default bell schedule, one class-specific override schedule
+     * (a later lunch), plus a couple of published, clash-free class-section
+     * timetables so the module has realistic demo data.
      */
     private function seedTimetable(School $school, AcademicSession $session): void
     {
-        $slotDefs = [
+        // School default template (class_id = null), inherited by every class
+        // that has no override of its own.
+        $defaultDefs = [
             ['name' => 'Period 1', 'sequence' => 1, 'start' => '08:00', 'end' => '08:45', 'break' => false],
             ['name' => 'Period 2', 'sequence' => 2, 'start' => '08:45', 'end' => '09:30', 'break' => false],
             ['name' => 'Period 3', 'sequence' => 3, 'start' => '09:30', 'end' => '10:15', 'break' => false],
@@ -771,8 +774,8 @@ class DemoSchoolSeeder extends Seeder
             ['name' => 'Period 6', 'sequence' => 8, 'start' => '12:40', 'end' => '13:25', 'break' => false],
         ];
 
-        $slots = collect($slotDefs)->map(fn (array $def) => PeriodSlot::updateOrCreate(
-            ['school_id' => $school->id, 'sequence' => $def['sequence']],
+        $defaultSlots = collect($defaultDefs)->map(fn (array $def) => PeriodSlot::updateOrCreate(
+            ['school_id' => $school->id, 'class_id' => null, 'sequence' => $def['sequence']],
             [
                 'name' => $def['name'],
                 'start_time' => $def['start'],
@@ -786,17 +789,11 @@ class DemoSchoolSeeder extends Seeder
             return;
         }
 
-        $teachingSlots = $slots->where('is_break', false)->values();
-
         $teachers = Employee::where('school_id', $school->id)
             ->where('employee_type', 'teaching')
             ->where('status', 'active')
             ->orderBy('id')
             ->get();
-
-        if ($teachingSlots->isEmpty() || $teachers->isEmpty()) {
-            return;
-        }
 
         $classSections = Student::where('school_id', $school->id)
             ->where('academic_session_id', $session->id)
@@ -809,6 +806,42 @@ class DemoSchoolSeeder extends Seeder
             ->limit(2)
             ->get();
 
+        if ($teachers->isEmpty() || $classSections->isEmpty()) {
+            return;
+        }
+
+        // Give the SECOND demo class a custom schedule with a later lunch so the
+        // per-class feature is visible in demo data. Only the lunch break and the
+        // following period shift; teaching-period boundaries earlier in the day
+        // stay aligned with the default, which (with the teacher offset below)
+        // keeps both demo timetables clash-free under time-overlap detection.
+        $overrideClassId = (int) $classSections->last()->class_id;
+        $overrideDefs = collect($defaultDefs)->map(function (array $def) {
+            if ($def['sequence'] === 7) { // Lunch — later
+                $def['start'] = '12:20';
+                $def['end'] = '13:00';
+            } elseif ($def['sequence'] === 8) { // Period 6 — after the later lunch
+                $def['start'] = '13:00';
+                $def['end'] = '13:45';
+            }
+
+            return $def;
+        });
+
+        $overrideSlots = $overrideDefs->map(fn (array $def) => PeriodSlot::updateOrCreate(
+            ['school_id' => $school->id, 'class_id' => $overrideClassId, 'sequence' => $def['sequence']],
+            [
+                'name' => $def['name'],
+                'start_time' => $def['start'],
+                'end_time' => $def['end'],
+                'is_break' => $def['break'],
+                'status' => 'active',
+            ],
+        ));
+
+        $defaultTeaching = $defaultSlots->where('is_break', false)->values();
+        $overrideTeaching = $overrideSlots->where('is_break', false)->values();
+
         foreach ($classSections as $ttIndex => $scope) {
             $class = SchoolClass::where('school_id', $school->id)->find($scope->class_id);
 
@@ -819,6 +852,16 @@ class DemoSchoolSeeder extends Seeder
             $subjects = $class->subjects()->orderBy('subjects.id')->get();
 
             if ($subjects->isEmpty()) {
+                continue;
+            }
+
+            // Each class is billed against its own effective schedule: the
+            // override class uses its custom slots, everyone else the default.
+            $teachingSlots = (int) $scope->class_id === $overrideClassId
+                ? $overrideTeaching
+                : $defaultTeaching;
+
+            if ($teachingSlots->isEmpty()) {
                 continue;
             }
 
@@ -835,7 +878,7 @@ class DemoSchoolSeeder extends Seeder
                 foreach ($teachingSlots as $slotIndex => $slot) {
                     $subject = $subjects[$slotIndex % $subjects->count()];
                     // Offsetting by the timetable index keeps the two demo
-                    // timetables from booking the same teacher in the same slot.
+                    // timetables from booking the same teacher at the same time.
                     $teacher = $teachers[($slotIndex + $ttIndex) % $teachers->count()];
 
                     TimetableEntry::create([

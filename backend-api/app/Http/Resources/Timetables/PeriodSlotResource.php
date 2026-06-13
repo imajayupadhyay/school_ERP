@@ -14,6 +14,7 @@ class PeriodSlotResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'class_id' => $this->class_id,
             'name' => $this->name,
             'sequence' => $this->sequence,
             'start_time' => $this->start_time ? substr((string) $this->start_time, 0, 5) : null,

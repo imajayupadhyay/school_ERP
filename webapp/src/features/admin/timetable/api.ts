@@ -2,17 +2,29 @@ import { api } from '@/lib/api'
 import type {
   PeriodSlot,
   PeriodSlotPayload,
+  PeriodSlotsResult,
   TeacherTimetableResponse,
   Timetable,
   TimetableEntryPayload,
   TimetablePayload,
 } from './types'
 
-// --- Period slots (school-wide bell schedule) ---
+// --- Period slots (per-class schedule, falling back to the school default) ---
 
-export async function fetchPeriodSlots(): Promise<PeriodSlot[]> {
-  const { data } = await api.get<{ data: PeriodSlot[] }>('/period-slots')
-  return data.data
+/**
+ * Fetch a schedule. With `class_id` it returns that class's effective slots
+ * (its own override, or the inherited default); without it, the school default.
+ */
+export async function fetchPeriodSlots(params?: { class_id?: number }): Promise<PeriodSlotsResult> {
+  const { data } = await api.get<{ data: PeriodSlot[]; meta?: { inherited?: boolean; class_id?: number | null } }>(
+    '/period-slots',
+    { params },
+  )
+  return {
+    slots: data.data,
+    inherited: data.meta?.inherited ?? false,
+    class_id: data.meta?.class_id ?? null,
+  }
 }
 
 export async function createPeriodSlot(payload: PeriodSlotPayload): Promise<PeriodSlot> {
@@ -27,6 +39,17 @@ export async function updatePeriodSlot(id: number, payload: PeriodSlotPayload): 
 
 export async function deletePeriodSlot(id: number): Promise<void> {
   await api.delete(`/period-slots/${id}`)
+}
+
+/** Clone the school default schedule into a class so it can be customised. */
+export async function copyDefaultToClass(classId: number): Promise<PeriodSlot[]> {
+  const { data } = await api.post<{ data: PeriodSlot[] }>(`/classes/${classId}/period-slots/copy-default`)
+  return data.data
+}
+
+/** Remove a class's custom schedule, reverting it to the school default. */
+export async function deleteClassSchedule(classId: number): Promise<void> {
+  await api.delete(`/classes/${classId}/period-slots`)
 }
 
 // --- Timetables ---

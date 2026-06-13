@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\V1\Guardians\GuardianController;
 use App\Http\Controllers\Api\V1\Learning\HomeworkAssignmentController;
 use App\Http\Controllers\Api\V1\Learning\StudyMaterialController;
 use App\Http\Controllers\Api\V1\Notices\NoticeController;
+use App\Http\Controllers\Api\V1\Notifications\NotificationController;
 use App\Http\Controllers\Api\V1\Reports\AuditLogController;
 use App\Http\Controllers\Api\V1\Reports\ReportController;
 use App\Http\Controllers\Api\V1\SchoolProfileController;
@@ -60,6 +61,12 @@ Route::prefix('v1')->group(function () {
         // Global topbar search — open to any authenticated user; the service
         // only includes categories the user can view (and stays tenant-scoped).
         Route::get('/search', [SearchController::class, 'index']);
+
+        // Notification bell — open to any authenticated user; the feed is
+        // permission-filtered and tenant-scoped inside NotificationService.
+        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::post('/notifications/seen', [NotificationController::class, 'markSeen']);
 
         // --- Reports & audit logs ---
         Route::get('/reports/overview', [ReportController::class, 'overview'])->middleware('permission:reports.view');
@@ -186,6 +193,10 @@ Route::prefix('v1')->group(function () {
         Route::post('/period-slots', [PeriodSlotController::class, 'store'])->middleware('permission:timetables.create');
         Route::put('/period-slots/{periodSlot}', [PeriodSlotController::class, 'update'])->middleware('permission:timetables.update');
         Route::delete('/period-slots/{periodSlot}', [PeriodSlotController::class, 'destroy'])->middleware('permission:timetables.delete');
+
+        // Per-class schedule override: copy the school default into a class, or revert it.
+        Route::post('/classes/{class}/period-slots/copy-default', [PeriodSlotController::class, 'copyDefaultToClass'])->middleware('permission:timetables.create');
+        Route::delete('/classes/{class}/period-slots', [PeriodSlotController::class, 'deleteClassSchedule'])->middleware('permission:timetables.delete');
 
         // The literal `teacher` route must precede the `{timetable}` wildcard.
         Route::get('/timetables/teacher/{employee}', [TimetableController::class, 'teacher'])->middleware('permission:timetables.view');

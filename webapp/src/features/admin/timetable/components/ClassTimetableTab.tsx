@@ -64,8 +64,17 @@ export default function ClassTimetableTab({ academicSessions, classes, teachers,
     ? { academic_session_id: Number(sessionId), class_id: Number(classId), section_id: Number(sectionId) }
     : undefined
 
-  const { data: slots = [] } = useQuery({ queryKey: ['period-slots'], queryFn: fetchPeriodSlots })
-  const teachingSlots = useMemo(() => slots.filter((s) => s.status === 'active'), [slots])
+  // Each class renders its own effective schedule (custom override, else the
+  // school default), so the grid rows can differ from class to class.
+  const { data: slotsResult } = useQuery({
+    queryKey: ['period-slots', classId || 'none'],
+    queryFn: () => fetchPeriodSlots(classId ? { class_id: Number(classId) } : undefined),
+    enabled: classId !== '',
+  })
+  const teachingSlots = useMemo(
+    () => (slotsResult?.slots ?? []).filter((s) => s.status === 'active'),
+    [slotsResult],
+  )
 
   const listQuery = useQuery({
     queryKey: ['timetables', scopeParams],

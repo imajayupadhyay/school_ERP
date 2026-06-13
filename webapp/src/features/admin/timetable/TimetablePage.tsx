@@ -65,7 +65,7 @@ export default function TimetablePage() {
           isSetupLoading={isSetupLoading}
         />
       )}
-      {activeTab === 'period' && <PeriodScheduleTab canManage={canManage} />}
+      {activeTab === 'period' && <PeriodScheduleTab canManage={canManage} classes={classes} />}
       {activeTab === 'teacher' && (
         <TeacherTimetableTab
           teachers={teachers}

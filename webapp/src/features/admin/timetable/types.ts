@@ -1,5 +1,6 @@
 export interface PeriodSlot {
   id: number
+  class_id: number | null
   name: string
   sequence: number
   start_time: string | null
@@ -9,12 +10,23 @@ export interface PeriodSlot {
 }
 
 export type PeriodSlotPayload = {
+  class_id?: number | null
   name: string
   sequence: number
   start_time?: string | null
   end_time?: string | null
   is_break?: boolean
   status?: string
+}
+
+/**
+ * Result of fetching a schedule. `inherited` is true when a class is showing the
+ * school default set because it has no override of its own.
+ */
+export interface PeriodSlotsResult {
+  slots: PeriodSlot[]
+  inherited: boolean
+  class_id: number | null
 }
 
 export interface TimetableEntry {

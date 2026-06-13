@@ -3,8 +3,8 @@
 namespace App\Http\Requests\Timetables;
 
 use App\Models\Employee;
-use App\Models\PeriodSlot;
 use App\Models\Timetable;
+use App\Services\Timetables\PeriodSlotResolver;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -30,7 +30,9 @@ class TimetableEntryRequest extends FormRequest
             'entries.*.period_slot_id' => [
                 'required',
                 'integer',
-                Rule::exists('period_slots', 'id')->where('school_id', $schoolId)->where('is_break', 0),
+                // Existence-only here; the authoritative "belongs to this class's
+                // effective (non-break) schedule" check runs in after().
+                Rule::exists('period_slots', 'id')->where('school_id', $schoolId),
             ],
             'entries.*.subject_id' => [
                 'required',
@@ -51,7 +53,7 @@ class TimetableEntryRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'entries.*.period_slot_id.exists' => 'A selected period is invalid or is a break and cannot hold a class.',
+            'entries.*.period_slot_id.exists' => 'A selected period is invalid.',
         ];
     }
 
@@ -82,6 +84,11 @@ class TimetableEntryRequest extends FormRequest
                     ->pluck('id')
                     ->all();
 
+                // Period slots that actually belong to this class's schedule
+                // (its own override, else the school default), excluding breaks.
+                $effectiveSlotIds = app(PeriodSlotResolver::class)
+                    ->effectiveSlotIdsForClass($timetable->class_id);
+
                 $seenCells = [];
 
                 foreach ($entries as $index => $entry) {
@@ -96,6 +103,10 @@ class TimetableEntryRequest extends FormRequest
 
                     if ($employeeId !== 0 && ! in_array($employeeId, $teacherIds, true)) {
                         $validator->errors()->add("entries.$index.employee_id", 'The selected staff member is not an active teacher.');
+                    }
+
+                    if ($slotId !== 0 && ! in_array($slotId, $effectiveSlotIds, true)) {
+                        $validator->errors()->add("entries.$index.period_slot_id", 'The selected period is not part of this class\'s schedule.');
                     }
 
                     $cellKey = $day.'-'.$slotId;

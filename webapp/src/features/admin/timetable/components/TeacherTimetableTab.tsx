@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import type { AcademicSession } from '../../academic-setup/types'
 import type { Employee } from '../../employees/types'
 import { inputClass } from '../../components/FormField'
 import { TeachersIcon } from '../../components/icons'
-import { fetchPeriodSlots, fetchTeacherTimetable } from '../api'
+import { fetchTeacherTimetable } from '../api'
 
 const DAYS = [
   { value: 1, label: 'Mon' },
@@ -29,8 +29,6 @@ export default function TeacherTimetableTab({ teachers, academicSessions }: Prop
   const employeeId: number | '' = selectedEmployee !== '' ? selectedEmployee : defaultEmployee
   const setEmployeeId = setSelectedEmployee
 
-  const { data: slots = [] } = useQuery({ queryKey: ['period-slots'], queryFn: fetchPeriodSlots })
-
   const params = currentSession ? { academic_session_id: currentSession.id } : undefined
   const { data, isLoading } = useQuery({
     queryKey: ['teacher-timetable', employeeId, params],
@@ -42,7 +40,17 @@ export default function TeacherTimetableTab({ teachers, academicSessions }: Prop
   for (const entry of data?.entries ?? []) {
     byCell.set(`${entry.day_of_week}-${entry.period_slot_id}`, entry)
   }
-  const teachingSlots = slots.filter((s) => !s.is_break && s.status === 'active')
+
+  // A teacher may span classes with different schedules, so there is no single
+  // bell schedule — derive the rows from the distinct periods they actually
+  // teach, ordered by start time (untimed slots last).
+  const teachingSlots = useMemo(() => {
+    const map = new Map<number, NonNullable<NonNullable<typeof data>['entries'][number]['period_slot']>>()
+    for (const entry of data?.entries ?? []) {
+      if (entry.period_slot) map.set(entry.period_slot_id, entry.period_slot)
+    }
+    return [...map.values()].sort((a, b) => (a.start_time ?? '~').localeCompare(b.start_time ?? '~'))
+  }, [data])
 
   return (
     <div className="space-y-5">

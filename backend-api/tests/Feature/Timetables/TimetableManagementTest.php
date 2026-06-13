@@ -59,12 +59,15 @@ class TimetableManagementTest extends TestCase
         return compact('class', 'section', 'subjects');
     }
 
-    private function makeSlot(School $school, int $sequence, bool $break = false): PeriodSlot
+    private function makeSlot(School $school, int $sequence, bool $break = false, ?int $classId = null, ?string $start = null, ?string $end = null): PeriodSlot
     {
         return PeriodSlot::create([
             'school_id' => $school->id,
+            'class_id' => $classId,
             'name' => $break ? "Break {$sequence}" : "Period {$sequence}",
             'sequence' => $sequence,
+            'start_time' => $start,
+            'end_time' => $end,
             'is_break' => $break,
             'status' => 'active',
         ]);
@@ -293,6 +296,200 @@ class TimetableManagementTest extends TestCase
 
         // And cannot fetch School B's timetable directly.
         $this->actingAs($adminA)->getJson("/api/v1/timetables/{$timetableB->id}")
+            ->assertStatus(404);
+    }
+
+    public function test_period_slot_sequence_is_unique_per_scope(): void
+    {
+        $school = $this->makeSchool();
+        $admin = $this->makeUser($school, 'school_admin');
+        $setup = $this->makeClass($school, 'Class 5', 'A', 5);
+        $classId = $setup['class']->id;
+
+        // Default slot at sequence 1.
+        $this->actingAs($admin)->postJson('/api/v1/period-slots', ['name' => 'P1', 'sequence' => 1])
+            ->assertCreated()->assertJsonPath('data.class_id', null);
+
+        // A class override may reuse sequence 1 — different scope.
+        $this->actingAs($admin)->postJson('/api/v1/period-slots', ['name' => 'P1', 'sequence' => 1, 'class_id' => $classId])
+            ->assertCreated()->assertJsonPath('data.class_id', $classId);
+
+        // But not twice within the same class scope.
+        $this->actingAs($admin)->postJson('/api/v1/period-slots', ['name' => 'P1b', 'sequence' => 1, 'class_id' => $classId])
+            ->assertStatus(422)->assertJsonValidationErrors(['sequence']);
+
+        // And not twice within the default set (guards MySQL distinct-NULL).
+        $this->actingAs($admin)->postJson('/api/v1/period-slots', ['name' => 'P1b', 'sequence' => 1])
+            ->assertStatus(422)->assertJsonValidationErrors(['sequence']);
+    }
+
+    public function test_class_effective_slots_fall_back_to_default(): void
+    {
+        $school = $this->makeSchool();
+        $admin = $this->makeUser($school, 'school_admin');
+        $setup = $this->makeClass($school, 'Class 5', 'A', 5);
+        $classId = $setup['class']->id;
+        $this->makeSlot($school, 1, false, null, '08:00', '08:45');
+        $this->makeSlot($school, 2, false, null, '08:45', '09:30');
+
+        // No override yet → inherits the two default slots.
+        $this->actingAs($admin)->getJson("/api/v1/period-slots?class_id={$classId}")
+            ->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('meta.inherited', true)
+            ->assertJsonPath('meta.class_id', $classId);
+
+        // Give the class its own single slot → no longer inherited.
+        $this->makeSlot($school, 1, false, $classId, '09:00', '09:50');
+
+        $this->actingAs($admin)->getJson("/api/v1/period-slots?class_id={$classId}")
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('meta.inherited', false);
+    }
+
+    public function test_admin_can_copy_default_schedule_into_a_class(): void
+    {
+        $school = $this->makeSchool();
+        $admin = $this->makeUser($school, 'school_admin');
+        $setup = $this->makeClass($school, 'Class 5', 'A', 5);
+        $classId = $setup['class']->id;
+        $this->makeSlot($school, 1, false, null, '08:00', '08:45');
+        $this->makeSlot($school, 2, true, null, '08:45', '09:00');
+        $this->makeSlot($school, 3, false, null, '09:00', '09:45');
+
+        $this->actingAs($admin)->postJson("/api/v1/classes/{$classId}/period-slots/copy-default")
+            ->assertCreated()->assertJsonCount(3, 'data');
+
+        $this->assertSame(3, PeriodSlot::where('class_id', $classId)->count());
+        $this->assertNotNull(AuditLog::where('action', 'period_slot.schedule_copied')->first());
+
+        // Copying again is rejected — the class already has a custom schedule.
+        $this->actingAs($admin)->postJson("/api/v1/classes/{$classId}/period-slots/copy-default")
+            ->assertStatus(422);
+    }
+
+    public function test_admin_can_revert_class_schedule_unless_published(): void
+    {
+        $school = $this->makeSchool();
+        $admin = $this->makeUser($school, 'school_admin');
+        $session = $this->makeSession($school);
+        $setup = $this->makeClass($school, 'Class 5', 'A', 5);
+        $classId = $setup['class']->id;
+        $override = $this->makeSlot($school, 1, false, $classId, '08:00', '08:45');
+        $teacher = $this->makeTeacher($school);
+        $timetable = $this->makeTimetable($school, $session, $setup, 'published');
+        TimetableEntry::create([
+            'school_id' => $school->id,
+            'timetable_id' => $timetable->id,
+            'day_of_week' => 1,
+            'period_slot_id' => $override->id,
+            'subject_id' => $setup['subjects'][0]->id,
+            'employee_id' => $teacher->id,
+        ]);
+
+        // A published timetable references the override → revert is blocked.
+        $this->actingAs($admin)->deleteJson("/api/v1/classes/{$classId}/period-slots")
+            ->assertStatus(422);
+        $this->assertSame(1, PeriodSlot::where('class_id', $classId)->count());
+
+        // Unpublish, then revert succeeds and the class falls back to default.
+        $this->actingAs($admin)->postJson("/api/v1/timetables/{$timetable->id}/unpublish")->assertOk();
+        $this->actingAs($admin)->deleteJson("/api/v1/classes/{$classId}/period-slots")->assertOk();
+        $this->assertSame(0, PeriodSlot::where('class_id', $classId)->count());
+        $this->assertNotNull(AuditLog::where('action', 'period_slot.schedule_reverted')->first());
+    }
+
+    public function test_overlapping_period_times_block_teacher_across_classes(): void
+    {
+        $school = $this->makeSchool();
+        $admin = $this->makeUser($school, 'school_admin');
+        $session = $this->makeSession($school);
+        $setupA = $this->makeClass($school, 'Class 5', 'A', 5);
+        $setupB = $this->makeClass($school, 'Class 6', 'B', 6);
+        // Class A uses the default schedule; Class B has its own overlapping slot.
+        $defaultSlot = $this->makeSlot($school, 1, false, null, '12:00', '12:40');
+        $overrideSlot = $this->makeSlot($school, 1, false, $setupB['class']->id, '12:20', '13:00');
+        $teacher = $this->makeTeacher($school);
+
+        $timetableA = $this->makeTimetable($school, $session, $setupA);
+        $timetableB = $this->makeTimetable($school, $session, $setupB);
+
+        $this->actingAs($admin)->putJson("/api/v1/timetables/{$timetableA->id}/entries", [
+            'entries' => [
+                ['day_of_week' => 1, 'period_slot_id' => $defaultSlot->id, 'subject_id' => $setupA['subjects'][0]->id, 'employee_id' => $teacher->id],
+            ],
+        ])->assertOk();
+
+        // 12:20–13:00 overlaps 12:00–12:40 → blocked even though slots differ.
+        $this->actingAs($admin)->putJson("/api/v1/timetables/{$timetableB->id}/entries", [
+            'entries' => [
+                ['day_of_week' => 1, 'period_slot_id' => $overrideSlot->id, 'subject_id' => $setupB['subjects'][0]->id, 'employee_id' => $teacher->id],
+            ],
+        ])->assertStatus(422)->assertJsonValidationErrors(['entries']);
+
+        $this->assertDatabaseMissing('timetable_entries', ['timetable_id' => $timetableB->id]);
+    }
+
+    public function test_adjacent_period_times_do_not_clash(): void
+    {
+        $school = $this->makeSchool();
+        $admin = $this->makeUser($school, 'school_admin');
+        $session = $this->makeSession($school);
+        $setupA = $this->makeClass($school, 'Class 5', 'A', 5);
+        $setupB = $this->makeClass($school, 'Class 6', 'B', 6);
+        $defaultSlot = $this->makeSlot($school, 1, false, null, '08:00', '08:45');
+        $overrideSlot = $this->makeSlot($school, 1, false, $setupB['class']->id, '08:45', '09:30');
+        $teacher = $this->makeTeacher($school);
+
+        $timetableA = $this->makeTimetable($school, $session, $setupA);
+        $timetableB = $this->makeTimetable($school, $session, $setupB);
+
+        $this->actingAs($admin)->putJson("/api/v1/timetables/{$timetableA->id}/entries", [
+            'entries' => [
+                ['day_of_week' => 1, 'period_slot_id' => $defaultSlot->id, 'subject_id' => $setupA['subjects'][0]->id, 'employee_id' => $teacher->id],
+            ],
+        ])->assertOk();
+
+        // 08:45–09:30 starts exactly when 08:00–08:45 ends → no overlap, allowed.
+        $this->actingAs($admin)->putJson("/api/v1/timetables/{$timetableB->id}/entries", [
+            'entries' => [
+                ['day_of_week' => 1, 'period_slot_id' => $overrideSlot->id, 'subject_id' => $setupB['subjects'][0]->id, 'employee_id' => $teacher->id],
+            ],
+        ])->assertOk()->assertJsonCount(1, 'data.entries');
+    }
+
+    public function test_entry_rejects_slot_outside_class_schedule(): void
+    {
+        $school = $this->makeSchool();
+        $admin = $this->makeUser($school, 'school_admin');
+        $session = $this->makeSession($school);
+        $setupA = $this->makeClass($school, 'Class 5', 'A', 5);
+        $setupB = $this->makeClass($school, 'Class 6', 'B', 6);
+        // A slot that belongs only to Class B's override schedule.
+        $foreignSlot = $this->makeSlot($school, 1, false, $setupB['class']->id, '08:00', '08:45');
+        $teacher = $this->makeTeacher($school);
+        $timetableA = $this->makeTimetable($school, $session, $setupA);
+
+        // Class A (default schedule) cannot use Class B's override slot.
+        $this->actingAs($admin)->putJson("/api/v1/timetables/{$timetableA->id}/entries", [
+            'entries' => [
+                ['day_of_week' => 1, 'period_slot_id' => $foreignSlot->id, 'subject_id' => $setupA['subjects'][0]->id, 'employee_id' => $teacher->id],
+            ],
+        ])->assertStatus(422)->assertJsonValidationErrors(['entries.0.period_slot_id']);
+    }
+
+    public function test_class_schedule_endpoints_are_tenant_isolated(): void
+    {
+        $schoolA = $this->makeSchool('Alpha');
+        $schoolB = $this->makeSchool('Beta');
+        $adminA = $this->makeUser($schoolA, 'school_admin');
+        $setupB = $this->makeClass($schoolB, 'Class 5', 'A', 5);
+
+        // School A admin cannot copy/revert a schedule on School B's class.
+        $this->actingAs($adminA)->postJson("/api/v1/classes/{$setupB['class']->id}/period-slots/copy-default")
+            ->assertStatus(404);
+        $this->actingAs($adminA)->deleteJson("/api/v1/classes/{$setupB['class']->id}/period-slots")
             ->assertStatus(404);
     }
 }
