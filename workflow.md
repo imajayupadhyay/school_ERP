@@ -176,13 +176,25 @@ Completed:
   - Backend feature tests in `tests/Feature/Notifications/NotificationTest.php` (5: others-only + registry filtering, permission filtering, unread watermark + mark-seen, seen flips feed read flags, tenant isolation). Full suite: **146/146 passing**.
   - Verified with `migrate`, full `php artisan test`, `npm run build` (242 modules, no TS errors; existing chunk-size warning), targeted ESLint (clean), and a live curl smoke against the demo school (seed two events by another user → unread 2 → feed with actor/category/route → mark seen → unread 0, read flags flip).
 
+## Phase 4 — Platform Super Admin Panel (in progress)
+
+- Platform foundation — secure login + platform dashboard (Phase 4, module 1):
+  - The Platform Super Admin is a `User` with `role = super_admin` and `school_id = null` (already bypasses tenancy via `BelongsToSchool` and all `permission:` gates via `effectivePermissions() = ['*']`). Seeded via tinker — owner account `ajay upadhyay` / `ajayupadhyay030@gmail.com` (no seeder file).
+  - Separate auth surface (no school code). New `App\Http\Middleware\EnsurePlatformAdmin` (alias `platform.admin`) rejects anyone who is not an active super_admin with a null `school_id` — a normal school user with a valid Sanctum token still gets 403. Routes under `/api/v1/platform`: public `POST /platform/auth/login` (email + password only, accepted only for a super_admin), and `platform.admin`-gated `GET /platform/auth/me`, `POST /platform/auth/logout`, `GET /platform/dashboard`. `PlatformAuthController` issues a token tagged `platform`.
+  - `App\Services\Platform\PlatformDashboardService` returns cross-tenant aggregates (uses `->allSchools()` explicitly): totals (schools, active/inactive, new-this-month, users, students, employees, guardians), schools-by-status breakdown, 6-month onboarding trend, recent schools, and top schools by enrolment. `PlatformDashboardController`.
+  - Web: the platform panel is fully isolated from the school app — its own axios client `src/lib/platformApi.ts` (token key `schoollid.platform_token`, **no** `school-code` header), its own `PlatformAuthProvider`/`PlatformProtectedRoute` (scoped to platform routes via `PlatformRoot`), and a distinct **indigo** `.platform-theme` that re-skins the shared admin design-system components (PageHeader, StatCard, TrendChart, TableUI). Routes: `/schoollid-secure-login` (dedicated login page) → `/platform` (`PlatformLayout` shell with `PlatformSidebar` listing the Phase 4 build order as "Soon" items + `PlatformTopbar`) → platform dashboard (`PlatformDashboardPage`: KPI cards, onboarding trend, status breakdown, recent/top schools).
+  - Backend feature tests in `tests/Feature/Platform/PlatformDashboardTest.php` (5: super-admin platform login, wrong-password 422, school user rejected at platform login, school-user token blocked from platform dashboard 403, cross-tenant dashboard aggregates). Full suite: **151/151 passing**.
+  - Verified with `php artisan test`, `npm run build` (255 modules, no TS errors; existing chunk-size warning), ESLint (clean), and a live curl smoke (login → `*` permissions → dashboard aggregates 1 school/205 students → wrong password 422).
+
+Not Started (Phase 4 remaining modules — build order): school creation & management, school onboarding, subscription plans, school subscription assignment, module/feature access control, billing & invoices, platform users & permissions, support tickets, announcements to schools, notification/payment gateway management, platform reports & audit logs.
+
 Not Started:
 
 - RBAC follow-ups: a dedicated Accountant/Receptionist onboarding flow surfaced in the UI, permission-aware report **export** controls (export endpoints are gated by `reports.export`/`students.export` but the UI export buttons are still gated by the coarser module flag), bulk role assignment, and a `notices.publish` route-level gate (currently publish happens via status on create/update).
 - Notices follow-ups: SMS/email/WhatsApp/push channel providers, delivery provider webhooks/statuses, reusable notification templates, and two-way parent-teacher messaging/meeting requests.
 - Fees module follow-ups (out of scope this round): printable PDF receipts, fee reminders/notifications, late-fee fines, online payment gateway, bulk invoice regeneration, and a dedicated Accountant role (collection currently gated to school_admin/principal/super_admin until full RBAC lands).
 - Reports follow-ups: CSV/PDF exports, scheduled report emails, saved report presets, and deeper module-specific report drilldowns.
-- Platform Super Admin web panel.
+- Platform Super Admin web panel — foundation done (see Phase 4 above); remaining modules listed under "Phase 4 — Platform Super Admin Panel".
 - Student, Parent, and Teacher/Employee portals.
 - Broader file upload workflows.
 - Android and iOS apps.

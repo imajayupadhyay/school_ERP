@@ -25,6 +25,8 @@ use App\Http\Controllers\Api\V1\Learning\HomeworkAssignmentController;
 use App\Http\Controllers\Api\V1\Learning\StudyMaterialController;
 use App\Http\Controllers\Api\V1\Notices\NoticeController;
 use App\Http\Controllers\Api\V1\Notifications\NotificationController;
+use App\Http\Controllers\Api\V1\Platform\Auth\PlatformAuthController;
+use App\Http\Controllers\Api\V1\Platform\PlatformDashboardController;
 use App\Http\Controllers\Api\V1\Reports\AuditLogController;
 use App\Http\Controllers\Api\V1\Reports\ReportController;
 use App\Http\Controllers\Api\V1\SchoolProfileController;
@@ -49,6 +51,26 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1')->group(function () {
     // --- Public ---
     Route::post('/auth/login', [AuthController::class, 'login']);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Platform Super Admin (SaaS owner)
+    |--------------------------------------------------------------------------
+    | A separate surface with its own login (email + password, no school code).
+    | The `platform.admin` middleware (EnsurePlatformAdmin) ensures only an
+    | active super_admin with a null school_id can reach these routes — a normal
+    | school user with a valid token is still rejected.
+    */
+    Route::prefix('platform')->group(function () {
+        Route::post('/auth/login', [PlatformAuthController::class, 'login']);
+
+        Route::middleware(['auth:sanctum', 'platform.admin'])->group(function () {
+            Route::get('/auth/me', [PlatformAuthController::class, 'me']);
+            Route::post('/auth/logout', [PlatformAuthController::class, 'logout']);
+
+            Route::get('/dashboard', [PlatformDashboardController::class, 'index']);
+        });
+    });
 
     // --- Authenticated (Sanctum bearer token) ---
     Route::middleware('auth:sanctum')->group(function () {

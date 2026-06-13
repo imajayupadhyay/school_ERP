@@ -1,0 +1,23 @@
+/* ============================================================================
+   Platform Super Admin panel — scoped colour scheme.
+   Reuses the admin design-system COMPONENTS but re-skins the shared tokens to
+   a distinct indigo identity, so the SaaS-owner panel never looks like a
+   school's admin panel. Tailwind v4 utilities read these as CSS variables, so
+   bg-accent / text-accent / border-line resolve to the values below inside
+   the `.platform-theme` subtree only.
+   ============================================================================ */
+.platform-theme {
+  --color-ink: #131c3d;       /* navy ink — text, dark tiles, avatars */
+  --color-ink-soft: #25306a;
+  --color-paper: #f7f7fb;     /* cool paper — page background */
+  --color-paper-2: #ececf8;   /* deeper paper — subtle indigo-tinted surfaces */
+  --color-accent: #5145cd;    /* indigo — primary actions, active nav */
+  --color-accent-2: #6d5fe3;  /* indigo light — hover */
+  --color-lime: #d6991f;      /* gold — prestige / emphasis */
+  --color-line: rgba(19, 28, 61, 0.12);
+}
+
+/* Deep indigo-navy gradient for the platform sidebar. */
+.platform-theme .platform-sidebar {
+  background: linear-gradient(180deg, #0a1024 0%, #181a44 58%, #241b54 100%);
+}

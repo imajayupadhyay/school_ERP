@@ -18,6 +18,11 @@ import TimetablePage from '@/features/admin/timetable/TimetablePage'
 import NoticesPage from '@/features/admin/notices/NoticesPage'
 import ReportsPage from '@/features/admin/reports/ReportsPage'
 import AccessPage from '@/features/admin/access/AccessPage'
+import PlatformRoot from '@/features/platform/PlatformRoot'
+import PlatformLoginPage from '@/features/platform/auth/PlatformLoginPage'
+import PlatformProtectedRoute from '@/features/platform/auth/PlatformProtectedRoute'
+import PlatformLayout from '@/features/platform/PlatformLayout'
+import PlatformDashboardPage from '@/features/platform/dashboard/PlatformDashboardPage'
 
 function App() {
   return (
@@ -82,6 +87,16 @@ function App() {
             path="roles"
             element={<RequirePermission permission="access.view"><AccessPage /></RequirePermission>}
           />
+        </Route>
+      </Route>
+
+      {/* Platform Super Admin (isolated auth, separate token + login URL) */}
+      <Route element={<PlatformRoot />}>
+        <Route path="/schoollid-secure-login" element={<PlatformLoginPage />} />
+        <Route element={<PlatformProtectedRoute />}>
+          <Route path="/platform" element={<PlatformLayout />}>
+            <Route index element={<PlatformDashboardPage />} />
+          </Route>
         </Route>
       </Route>
 
