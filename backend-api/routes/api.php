@@ -27,6 +27,7 @@ use App\Http\Controllers\Api\V1\Notices\NoticeController;
 use App\Http\Controllers\Api\V1\Notifications\NotificationController;
 use App\Http\Controllers\Api\V1\Platform\Auth\PlatformAuthController;
 use App\Http\Controllers\Api\V1\Platform\PlatformDashboardController;
+use App\Http\Controllers\Api\V1\Platform\Schools\SchoolController as PlatformSchoolController;
 use App\Http\Controllers\Api\V1\Reports\AuditLogController;
 use App\Http\Controllers\Api\V1\Reports\ReportController;
 use App\Http\Controllers\Api\V1\SchoolProfileController;
@@ -69,6 +70,14 @@ Route::prefix('v1')->group(function () {
             Route::post('/auth/logout', [PlatformAuthController::class, 'logout']);
 
             Route::get('/dashboard', [PlatformDashboardController::class, 'index']);
+
+            // School tenants — create (with first owner admin), list, view, edit, status.
+            Route::get('/schools', [PlatformSchoolController::class, 'index']);
+            Route::post('/schools', [PlatformSchoolController::class, 'store']);
+            Route::get('/schools/{school}', [PlatformSchoolController::class, 'show']);
+            Route::put('/schools/{school}', [PlatformSchoolController::class, 'update']);
+            Route::post('/schools/{school}/status', [PlatformSchoolController::class, 'updateStatus']);
+            Route::delete('/schools/{school}', [PlatformSchoolController::class, 'destroy']);
         });
     });
 

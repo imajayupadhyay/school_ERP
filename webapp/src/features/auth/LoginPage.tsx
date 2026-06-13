@@ -206,18 +206,6 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="mt-5 rounded-xl bg-paper-2/70 px-4 py-3 text-center text-[0.8rem] text-ink/55">
-            Demo access — code <span className="font-semibold text-ink/80">Demo</span>, email{' '}
-            <span className="font-semibold text-ink/80">demo@gmail.com</span>, password{' '}
-            <span className="font-semibold text-ink/80">Demo@123</span>
-          </p>
-
-          <p className="mt-8 text-center text-[0.9rem] text-ink/60">
-            New to SchoolLID?{' '}
-            <Link to="/#contact" className="font-semibold text-accent hover:text-accent-2 transition">
-              Register your school
-            </Link>
-          </p>
         </div>
       </main>
     </div>

@@ -38,7 +38,7 @@ const navGroups: NavGroup[] = [
   {
     label: 'Tenants',
     items: [
-      { label: 'Schools', icon: ClassesIcon },
+      { label: 'Schools', icon: ClassesIcon, to: '/platform/schools' },
       { label: 'Onboarding', icon: GraduationIcon },
     ],
   },
