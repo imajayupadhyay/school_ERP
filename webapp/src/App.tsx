@@ -24,6 +24,7 @@ import PlatformProtectedRoute from '@/features/platform/auth/PlatformProtectedRo
 import PlatformLayout from '@/features/platform/PlatformLayout'
 import PlatformDashboardPage from '@/features/platform/dashboard/PlatformDashboardPage'
 import SchoolsPage from '@/features/platform/schools/SchoolsPage'
+import EnquiriesPage from '@/features/platform/enquiries/EnquiriesPage'
 
 function App() {
   return (
@@ -98,6 +99,7 @@ function App() {
           <Route path="/platform" element={<PlatformLayout />}>
             <Route index element={<PlatformDashboardPage />} />
             <Route path="schools" element={<SchoolsPage />} />
+            <Route path="enquiries" element={<EnquiriesPage />} />
           </Route>
         </Route>
       </Route>

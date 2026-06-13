@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\Attendance\AttendanceController;
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\Employees\EmployeeController;
+use App\Http\Controllers\Api\V1\EnquiryController;
 use App\Http\Controllers\Api\V1\Exams\ExamController;
 use App\Http\Controllers\Api\V1\Exams\ExamMarkController;
 use App\Http\Controllers\Api\V1\Exams\ExamResultController;
@@ -26,6 +27,7 @@ use App\Http\Controllers\Api\V1\Learning\StudyMaterialController;
 use App\Http\Controllers\Api\V1\Notices\NoticeController;
 use App\Http\Controllers\Api\V1\Notifications\NotificationController;
 use App\Http\Controllers\Api\V1\Platform\Auth\PlatformAuthController;
+use App\Http\Controllers\Api\V1\Platform\EnquiryController as PlatformEnquiryController;
 use App\Http\Controllers\Api\V1\Platform\PlatformDashboardController;
 use App\Http\Controllers\Api\V1\Platform\Schools\SchoolController as PlatformSchoolController;
 use App\Http\Controllers\Api\V1\Reports\AuditLogController;
@@ -53,6 +55,9 @@ Route::prefix('v1')->group(function () {
     // --- Public ---
     Route::post('/auth/login', [AuthController::class, 'login']);
 
+    // Public marketing enquiry form (throttled to deter spam).
+    Route::post('/enquiries', [EnquiryController::class, 'store'])->middleware('throttle:10,1');
+
     /*
     |--------------------------------------------------------------------------
     | Platform Super Admin (SaaS owner)
@@ -78,6 +83,11 @@ Route::prefix('v1')->group(function () {
             Route::put('/schools/{school}', [PlatformSchoolController::class, 'update']);
             Route::post('/schools/{school}/status', [PlatformSchoolController::class, 'updateStatus']);
             Route::delete('/schools/{school}', [PlatformSchoolController::class, 'destroy']);
+
+            // Marketing enquiries (sales leads).
+            Route::get('/enquiries', [PlatformEnquiryController::class, 'index']);
+            Route::post('/enquiries/{enquiry}/status', [PlatformEnquiryController::class, 'updateStatus']);
+            Route::delete('/enquiries/{enquiry}', [PlatformEnquiryController::class, 'destroy']);
         });
     });
 

@@ -12,6 +12,7 @@ import {
   NoticesIcon,
   SettingsIcon,
   ReportsIcon,
+  ClipboardUserIcon,
   CloseIcon,
   ChevronsLeftIcon,
 } from '@/features/admin/components/icons'
@@ -39,6 +40,7 @@ const navGroups: NavGroup[] = [
     label: 'Tenants',
     items: [
       { label: 'Schools', icon: ClassesIcon, to: '/platform/schools' },
+      { label: 'Enquiries', icon: ClipboardUserIcon, to: '/platform/enquiries' },
       { label: 'Onboarding', icon: GraduationIcon },
     ],
   },

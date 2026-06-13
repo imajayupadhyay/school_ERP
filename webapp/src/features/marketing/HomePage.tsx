@@ -10,7 +10,7 @@ import CustomPackage from './components/CustomPackage'
 import DownloadApp from './components/DownloadApp'
 import Contact from './components/Contact'
 import Footer from './components/Footer'
-import RegistrationModal from './components/RegistrationModal'
+import EnquiryModal from './components/EnquiryModal'
 
 /** Public marketing homepage — React/Tailwind port of school/index.html. */
 export default function HomePage() {
@@ -32,7 +32,7 @@ export default function HomePage() {
       <Contact />
       <Footer />
 
-      <RegistrationModal open={trialOpen} onClose={() => setTrialOpen(false)} />
+      <EnquiryModal open={trialOpen} onClose={() => setTrialOpen(false)} />
     </div>
   )
 }
